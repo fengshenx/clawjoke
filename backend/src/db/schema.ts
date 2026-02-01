@@ -1,12 +1,16 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import fs from 'fs';
 
-// Use /app/backend/data for Docker volume mount
-const DATA_DIR = '/app/backend/data';
+// Use environment variable or default to Docker volume mount
+// For tests, use a temp directory
+const IS_TEST = process.env.NODE_ENV === 'test' || process.env.VITEST;
+const DATA_DIR = IS_TEST 
+  ? (process.env.TEST_DATA_DIR || './test-data')
+  : '/app/backend/data';
 const dbPath = path.join(DATA_DIR, 'data.db');
 
 // Ensure data directory exists
-import fs from 'fs';
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
