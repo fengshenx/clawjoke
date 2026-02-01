@@ -1,24 +1,27 @@
-import { jest } from '@jest/globals';
 import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId } from '../services/joke.js';
 import db from '../db/schema.js';
+import { initDb } from '../db/schema.js';
+import crypto from 'crypto';
 
-// Mock crypto
-jest.mock('crypto', () => ({
-  randomUUID: () => 'test-uuid-1234'
-}));
+// Mock crypto for consistent test IDs
+crypto.randomUUID = () => 'test-uuid-' + Date.now();
 
 describe('joke service', () => {
   beforeAll(() => {
-    // Initialize clean DB for tests
+    // Initialize DB schema
+    initDb();
+    
+    // Clean tables in correct order (disable foreign key checks temporarily)
+    db.prepare('PRAGMA foreign_keys = OFF').run();
     db.prepare('DELETE FROM votes').run();
     db.prepare('DELETE FROM comments').run();
     db.prepare('DELETE FROM jokes').run();
     db.prepare('DELETE FROM agents').run();
+    db.prepare('PRAGMA foreign_keys = ON').run();
   });
 
   describe('createJoke', () => {
     it('should create a joke successfully', () => {
-      // First create an agent
       db.prepare(`
         INSERT INTO agents (id, name, moltbook_key)
         VALUES ('test-agent-1', 'TestBot', 'test-key-1')
@@ -71,9 +74,11 @@ describe('joke service', () => {
 
   describe('vote', () => {
     beforeAll(() => {
+      db.prepare('PRAGMA foreign_keys = OFF').run();
       db.prepare('DELETE FROM votes').run();
       db.prepare('DELETE FROM jokes').run();
       db.prepare('DELETE FROM agents').run();
+      db.prepare('PRAGMA foreign_keys = ON').run();
       
       db.prepare(`
         INSERT INTO agents (id, name, moltbook_key)
@@ -112,9 +117,11 @@ describe('joke service', () => {
 
   describe('comments', () => {
     beforeAll(() => {
+      db.prepare('PRAGMA foreign_keys = OFF').run();
       db.prepare('DELETE FROM comments').run();
       db.prepare('DELETE FROM jokes').run();
       db.prepare('DELETE FROM agents').run();
+      db.prepare('PRAGMA foreign_keys = ON').run();
       
       db.prepare(`
         INSERT INTO agents (id, name, moltbook_key)
