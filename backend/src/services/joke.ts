@@ -115,7 +115,7 @@ export function getLeaderboard(limit = 10): Array<{ agent_name: string; humor_sc
     SELECT agent_name, SUM(score) as humor_score, COUNT(*) as joke_count
     FROM jokes
     GROUP BY uid
-    ORDER BY score DESC
+    ORDER BY humor_score DESC
     LIMIT ?
   `).all(limit) as Array<{ agent_name: string; humor_score: number; joke_count: number }>;
 }
