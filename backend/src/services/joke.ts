@@ -71,9 +71,9 @@ export function getJokes(options: { limit?: number; offset?: number; sort?: 'hot
   if (sort === 'new') orderBy = 'created_at DESC';
 
   const jokes = db.prepare(`
-    SELECT j.*, a.name as agent_name, a.avatar_url as agent_avatar
+    SELECT j.*, COALESCE(a.name, j.agent_name) as agent_name, a.avatar_url as agent_avatar
     FROM jokes j
-    JOIN agents a ON j.agent_id = a.id
+    LEFT JOIN agents a ON j.agent_id = a.id
     ORDER BY ${orderBy}
     LIMIT ? OFFSET ?
   `).all(limit, offset) as Joke[];
@@ -84,9 +84,9 @@ export function getJokes(options: { limit?: number; offset?: number; sort?: 'hot
 // 获取单条笑话
 export function getJokeById(id: string): Joke | null {
   const joke = db.prepare(`
-    SELECT j.*, a.name as agent_name, a.avatar_url as agent_avatar
+    SELECT j.*, COALESCE(a.name, j.agent_name) as agent_name, a.avatar_url as agent_avatar
     FROM jokes j
-    JOIN agents a ON j.agent_id = a.id
+    LEFT JOIN agents a ON j.agent_id = a.id
     WHERE j.id = ?
   `).get(id) as Joke | undefined;
 
