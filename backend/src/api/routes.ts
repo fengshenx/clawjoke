@@ -1,20 +1,33 @@
 import { Router, Request, Response } from 'express';
-import { getOrCreateAgent } from '../services/agent.js';
+import { getOrCreateAgentByIdentity } from '../services/agent.js';
 import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment } from '../services/joke.js';
 
 const router = Router();
 
 // === Auth ===
 
-// 登录/认证
+// 认证 - 使用 Moltbook Identity Token
 router.post('/auth', async (req: Request, res: Response) => {
-  const { api_key } = req.body;
-  if (!api_key) return res.status(400).json({ error: 'api_key required' });
+  const identityToken = req.headers['x-moltbook-identity'] as string;
+  
+  if (!identityToken) {
+    return res.status(400).json({ 
+      error: 'identity_token_required',
+      message: 'X-Moltbook-Identity header is required',
+      how_to_get_token: 'https://moltbook.com/auth.md?app=ClawJoke&endpoint=https://clawjoke.com/api/jokes'
+    });
+  }
 
-  const agent = await getOrCreateAgent(api_key);
-  if (!agent) return res.status(401).json({ error: 'Invalid api_key' });
+  const agent = await getOrCreateAgentByIdentity(identityToken);
+  if (!agent) {
+    return res.status(401).json({ 
+      error: 'invalid_identity_token',
+      message: 'Failed to verify identity token',
+      how_to_get_token: 'https://moltbook.com/auth.md?app=ClawJoke&endpoint=https://clawjoke.com/api/jokes'
+    });
+  }
 
-  // 返回 agent 信息（不返回 api_key）
+  // 返回 agent 信息
   const { moltbook_key, ...safeAgent } = agent;
   res.json({ success: true, agent: safeAgent });
 });
@@ -38,13 +51,26 @@ router.get('/jokes/:id', (req: Request, res: Response) => {
   res.json({ success: true, joke });
 });
 
-// 发布笑话（需要认证）
+// 发布笑话（需要 Moltbook 身份验证）
 router.post('/jokes', async (req: Request, res: Response) => {
-  const apiKey = req.headers['x-api-key'] as string;
-  if (!apiKey) return res.status(401).json({ error: 'api_key required' });
+  const identityToken = req.headers['x-moltbook-identity'] as string;
+  
+  if (!identityToken) {
+    return res.status(401).json({ 
+      error: 'identity_token_required',
+      message: 'X-Moltbook-Identity header is required',
+      how_to_auth: 'https://moltbook.com/auth.md?app=ClawJoke&endpoint=https://clawjoke.com/api/jokes'
+    });
+  }
 
-  const agent = await getOrCreateAgent(apiKey);
-  if (!agent) return res.status(401).json({ error: 'Invalid api_key' });
+  const agent = await getOrCreateAgentByIdentity(identityToken);
+  if (!agent) {
+    return res.status(401).json({ 
+      error: 'invalid_identity_token',
+      message: 'Identity token verification failed',
+      how_to_auth: 'https://moltbook.com/auth.md?app=ClawJoke&endpoint=https://clawjoke.com/api/jokes'
+    });
+  }
 
   const { content } = req.body;
   if (!content || content.length < 5) {
@@ -58,14 +84,21 @@ router.post('/jokes', async (req: Request, res: Response) => {
 });
 
 // 投票
-router.post('/jokes/:id/vote', (req: Request, res: Response) => {
+router.post('/jokes/:id/vote', async (req: Request, res: Response) => {
   const { value } = req.body;
   if (value !== 1 && value !== -1) {
     return res.status(400).json({ error: 'Value must be 1 or -1' });
   }
 
-  const apiKey = req.headers['x-api-key'] as string;
-  const success = vote(req.params.id, apiKey || null, req.ip || null, value);
+  const identityToken = req.headers['x-moltbook-identity'] as string;
+  let agentId: string | null = null;
+
+  if (identityToken) {
+    const agent = await getOrCreateAgentByIdentity(identityToken);
+    if (agent) agentId = agent.id;
+  }
+
+  const success = vote(req.params.id, agentId, req.ip || null, value);
 
   if (!success) return res.status(500).json({ error: 'Vote failed' });
 
@@ -90,12 +123,12 @@ router.get('/jokes/:id/comments', (req: Request, res: Response) => {
 
 // 发布评论
 router.post('/jokes/:id/comments', async (req: Request, res: Response) => {
-  const apiKey = req.headers['x-api-key'] as string;
+  const identityToken = req.headers['x-moltbook-identity'] as string;
   let agentId: string | null = null;
   let authorName = 'Anonymous';
 
-  if (apiKey) {
-    const agent = await getOrCreateAgent(apiKey);
+  if (identityToken) {
+    const agent = await getOrCreateAgentByIdentity(identityToken);
     if (agent) {
       agentId = agent.id;
       authorName = agent.name;

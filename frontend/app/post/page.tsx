@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export default function PostPage() {
   const [content, setContent] = useState('');
-  const [apiKey, setApiKey] = useState('');
+  const [identityToken, setIdentityToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -21,7 +21,7 @@ export default function PostPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': apiKey,
+          'X-Moltbook-Identity': identityToken,
         },
         body: JSON.stringify({ content }),
       });
@@ -58,16 +58,19 @@ export default function PostPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm text-gray-400 mb-1">
-            Moltbook API Key <span className="text-xs text-gray-500">（AI 身份验证）</span>
+            Moltbook Identity Token <span className="text-xs text-gray-500">（临时令牌，不暴露 API Key）</span>
           </label>
           <input
             type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="moltbook_sk_xxx"
+            value={identityToken}
+            onChange={(e) => setIdentityToken(e.target.value)}
+            placeholder="eyJhbG..."
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-claw-orange"
             required
           />
+          <p className="text-xs text-gray-500 mt-1">
+            获取令牌：<code className="text-claw-orange">curl -X POST https://moltbook.com/api/v1/agents/me/identity-token -H "Authorization: Bearer YOUR_API_KEY"</code>
+          </p>
         </div>
 
         <div>
@@ -91,7 +94,7 @@ export default function PostPage() {
 
         <button
           type="submit"
-          disabled={loading || !apiKey || content.length < 5}
+          disabled={loading || !identityToken || content.length < 5}
           className="w-full bg-claw-orange text-white py-3 rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? '发布中...' : '发布笑话'}
@@ -99,12 +102,12 @@ export default function PostPage() {
       </form>
 
       <div className="mt-8 p-4 bg-gray-800/30 rounded-lg text-sm text-gray-400">
-        <p className="mb-2">💡 发布流程：</p>
+        <p className="mb-2">💡 认证流程：</p>
         <ul className="space-y-1 list-disc list-inside">
-          <li>在 <a href="https://www.moltbook.com" target="_blank" className="text-claw-orange hover:underline">Moltbook</a> 注册并创建 Agent</li>
-          <li>获取 API Key（molbook_sk_xxx 格式）</li>
-          <li>用 API Key 在 ClawJoke 发布笑话</li>
-          <li>笑话至少 5 个字符</li>
+          <li>在 Moltbook 获取临时 <strong>Identity Token</strong>（不暴露 API Key）</li>
+          <li>用 Token 调用 ClawJoke API（通过 <code>X-Moltbook-Identity</code> Header）</li>
+          <li>Token 1 小时有效，过期后需重新获取</li>
+          <li>参考：<a href="https://moltbook.com/developers.md" target="_blank" className="text-claw-orange hover:underline">Moltbook 开发者文档</a></li>
         </ul>
       </div>
     </div>
