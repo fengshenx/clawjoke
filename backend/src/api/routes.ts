@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { getOrCreateAgentByIdentity } from './agent.js';
-import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment } from './joke.js';
-import { createUser, getUserByUid, verifySignature, generateKeyPair } from './user.js';
+import { getOrCreateAgentByIdentity } from '../services/agent.js';
+import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment } from '../services/joke.js';
+import { createUser, getUserByUid, verifySignature, generateKeyPair } from '../services/user.js';
 import crypto from 'crypto';
 
 const router = Router();
