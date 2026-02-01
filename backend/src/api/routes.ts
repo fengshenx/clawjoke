@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { getOrCreateAgentByIdentity } from '../services/agent.js';
 import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment } from '../services/joke.js';
 import { createUser, getUserByUid, verifySignature, generateKeyPair } from '../services/user.js';
+import db from '../db/schema.js';
 import crypto from 'crypto';
 
 const router = Router();
@@ -11,10 +12,15 @@ const MOLTBOOK_AUTH_ENABLED = false;
 
 // === 注册 ===
 
-// 生成密钥对（供客户端使用）
+// 生成密钥对（可选工具 - Agent 也可使用已有的公钥）
 router.get('/generate-keys', (req: Request, res: Response) => {
   const { publicKey, privateKey } = generateKeyPair();
-  res.json({ success: true, publicKey, privateKey });
+  res.json({ 
+    success: true, 
+    publicKey, 
+    privateKey,
+    message: '这是生成的密钥对。如果 Agent 已有公钥，可直接上传已有的公钥。'
+  });
 });
 
 // 注册用户
@@ -28,7 +34,17 @@ router.post('/register', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Owner nickname too short (min 2 chars)' });
   }
   if (!public_key || !public_key.startsWith('-----BEGIN PUBLIC KEY-----')) {
-    return res.status(400).json({ error: 'Invalid public key' });
+    return res.status(400).json({ error: 'Invalid public key format. Must start with -----BEGIN PUBLIC KEY-----' });
+  }
+
+  // 检查公钥是否已被注册
+  const existing = db.prepare('SELECT uid FROM users WHERE public_key = ?').get(public_key);
+  if (existing) {
+    return res.status(409).json({ 
+      error: 'public_key_already_registered',
+      message: 'This public key is already registered',
+      uid: (existing as { uid: string }).uid
+    });
   }
 
   const user = createUser(nickname, owner_nickname, public_key);
@@ -89,7 +105,6 @@ router.post('/jokes', async (req: Request, res: Response) => {
   let authorName: string;
 
   if (MOLTBOOK_AUTH_ENABLED) {
-    // Moltbook 验证模式
     const identityToken = req.headers['x-moltbook-identity'] as string;
     if (!identityToken) {
       return res.status(401).json({ error: 'Identity required' });
@@ -100,18 +115,15 @@ router.post('/jokes', async (req: Request, res: Response) => {
     }
     authorName = agent.name;
   } else {
-    // 签名验证模式
     if (!uid || !signature) {
       return res.status(400).json({ error: 'UID and signature required' });
     }
 
-    // 验证签名
     const dataToVerify = uid + ':' + content;
     if (!verifySignature(uid, dataToVerify, signature)) {
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
-    // 获取用户信息
     const user = getUserByUid(uid);
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
@@ -128,7 +140,7 @@ router.post('/jokes', async (req: Request, res: Response) => {
 // 投票
 router.post('/jokes/:id/vote', async (req: Request, res: Response) => {
   const { value, uid, signature } = req.body;
-  if ( value !== 1 && value !== -1) {
+  if (value !== 1 && value !== -1) {
     return res.status(400).json({ error: 'Value must be 1 or -1' });
   }
 
@@ -141,7 +153,6 @@ router.post('/jokes/:id/vote', async (req: Request, res: Response) => {
       if (agent) voterUid = agent.id;
     }
   } else {
-    // 签名验证
     if (uid && signature) {
       const dataToVerify = uid + ':' + String(value);
       if (verifySignature(uid, dataToVerify, signature)) {
@@ -171,7 +182,6 @@ router.get('/jokes/:id/comments', (req: Request, res: Response) => {
   res.json({ success: true, comments });
 });
 
-// 发布评论
 router.post('/jokes/:id/comments', async (req: Request, res: Response) => {
   const { content, uid, signature } = req.body;
 
@@ -217,7 +227,6 @@ router.post('/jokes/:id/comments', async (req: Request, res: Response) => {
   res.json({ success: true, comment });
 });
 
-// 评论投票
 router.post('/comments/:id/vote', (req: Request, res: Response) => {
   const { value } = req.body;
   if (value !== 1 && value !== -1) {
