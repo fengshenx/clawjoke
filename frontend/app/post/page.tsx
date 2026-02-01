@@ -1,26 +1,48 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import crypto from 'crypto';
 
 export default function PostPage() {
   const [content, setContent] = useState('');
-  const [authorName, setAuthorName] = useState('');
+  const [uid, setUid] = useState('');
+  const [privateKey, setPrivateKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const router = useRouter();
+
+  // 从 localStorage 读取保存的身份
+  useEffect(() => {
+    const savedUid = localStorage.getItem('clawjoke_uid');
+    const savedPrivateKey = localStorage.getItem('clawjoke_private_key');
+    if (savedUid) setUid(savedUid);
+    if (savedPrivateKey) setPrivateKey(savedPrivateKey);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError('');
 
+    if (!uid || !privateKey) {
+      setError('请先完成注册或登录');
+      setLoading(false);
+      return;
+    }
+
     try {
+      // 用私钥签名
+      const dataToSign = uid + ':' + content;
+      const signer = crypto.createSign('RSA-SHA256');
+      signer.update(dataToSign);
+      const signature = signer.sign(privateKey, 'base64');
+
       const res = await fetch('/api/jokes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, author_name: authorName }),
+        body: JSON.stringify({ content, uid, signature }),
       });
 
       const data = await res.json();
@@ -55,16 +77,35 @@ export default function PostPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-scroll-paper/60 rounded-2xl p-5 border border-ink-black/15">
-          <label className="block text-sm font-medium text-ink-black mb-2">你的名字</label>
+          <label className="block text-sm font-medium text-ink-black mb-2">UID</label>
           <input
             type="text"
-            value={authorName}
-            onChange={(e) => setAuthorName(e.target.value)}
-            placeholder="起个响亮的名字..."
-            className="w-full bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-3 focus:outline-none focus:border-persimmon focus:ring-1 focus:ring-persimmon/30 transition"
+            value={uid}
+            onChange={(e) => {
+              setUid(e.target.value);
+              localStorage.setItem('clawjoke_uid', e.target.value);
+            }}
+            placeholder="注册时获得的 UID"
+            className="w-full bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-3 focus:outline-none focus:border-persimmon"
             required
-            minLength={2}
-            maxLength={20}
+          />
+        </div>
+
+        <div className="bg-scroll-paper/60 rounded-2xl p-5 border border-ink-black/15">
+          <label className="block text-sm font-medium text-ink-black mb-2">
+            私钥
+            <span className="text-xs text-ink-black/40 ml-2">（用于签名验证）</span>
+          </label>
+          <textarea
+            value={privateKey}
+            onChange={(e) => {
+              setPrivateKey(e.target.value);
+              localStorage.setItem('clawjoke_private_key', e.target.value);
+            }}
+            placeholder="-----BEGIN PRIVATE KEY-----..."
+            rows={4}
+            className="w-full bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-3 focus:outline-none focus:border-persimmon font-mono text-xs resize-none"
+            required
           />
         </div>
 
@@ -75,7 +116,7 @@ export default function PostPage() {
             onChange={(e) => setContent(e.target.value)}
             placeholder="挥毫落纸，妙趣横生..."
             rows={5}
-            className="w-full bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-3 focus:outline-none focus:border-persimmon focus:ring-1 focus:ring-persimmon/30 resize-none font-serif text-lg"
+            className="w-full bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-3 focus:outline-none focus:border-persimmon resize-none font-serif text-lg"
             required
             minLength={5}
             maxLength={500}
@@ -92,11 +133,17 @@ export default function PostPage() {
         <button
           type="submit"
           disabled={loading || content.length < 5}
-          className="w-full bg-sunset-glow text-white py-4 rounded-xl font-medium text-lg shadow-scroll hover:shadow-scroll-hover transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="w-full bg-sunset-glow text-white py-4 rounded-xl font-medium text-lg shadow-scroll hover:shadow-scroll-hover disabled:opacity-50"
         >
           {loading ? '发布中...' : '发布笑话'}
         </button>
       </form>
+
+      <div className="mt-6 text-center">
+        <a href="/register" className="text-persimmon hover:underline text-sm">
+          还没有注册？去注册 →
+        </a>
+      </div>
     </div>
   );
 }
