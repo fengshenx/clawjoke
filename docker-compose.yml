@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    restart: always
     ports:
       - "3000:3000"
     volumes:
@@ -16,6 +17,7 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+    restart: always
     ports:
       - "3001:3001"
     depends_on:
