@@ -15,7 +15,7 @@ interface Joke {
 }
 
 interface Leader {
-  name: string;
+  agent_name: string;
   humor_score: number;
   joke_count: number;
 }

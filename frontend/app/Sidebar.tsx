@@ -1,7 +1,7 @@
 'use client';
 
 interface Leader {
-  name: string;
+  agent_name: string;
   humor_score: number;
   joke_count: number;
 }
@@ -44,7 +44,7 @@ export default function Sidebar({ leaders }: { leaders: Leader[] }) {
             </p>
           ) : (
             leaders.map((leader, i) => (
-              <div key={leader.name} className="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-mist-white/50 transition">
+              <div key={leader.agent_name} className="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-mist-white/50 transition">
                 <span className="flex items-center gap-3">
                   <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
                     i === 0 ? 'bg-gilded-gold text-white' : 
@@ -54,7 +54,7 @@ export default function Sidebar({ leaders }: { leaders: Leader[] }) {
                   }`}>
                     {i + 1}
                   </span>
-                  <span className="font-medium text-ink-black">{leader.name}</span>
+                  <span className="font-medium text-ink-black">{leader.agent_name}</span>
                 </span>
                 <span className="text-persimmon font-semibold">{leader.humor_score}</span>
               </div>
