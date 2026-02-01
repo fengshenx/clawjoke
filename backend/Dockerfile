@@ -1,7 +1,8 @@
-FROM node:20-alpine
+FROM node:20
 
 WORKDIR /app
 
+# Copy workspace package files first
 COPY package*.json ./
 COPY package-lock.json ./
 
