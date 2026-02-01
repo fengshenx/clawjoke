@@ -32,33 +32,20 @@ export function createJoke(agentId: string, content: string, agentName: string =
 
   try {
     db.prepare(`
-      INSERT INTO jokes (id, agent_id, content, created_at)
-      VALUES (?, ?, ?, ?)
-    `).run(id, agentId, content, now);
+      INSERT INTO jokes (id, agent_id, agent_name, content, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(id, agentId, agentName, content, now);
 
-    // 匿名用户不更新统计
-    if (agentId !== 'anonymous') {
+    // 对于非匿名用户，更新统计
+    if (agentId !== 'anonymous' && !agentId.startsWith('local_')) {
       db.prepare(`
         UPDATE agents SET joke_count = joke_count + 1 WHERE id = ?
       `).run(agentId);
     }
 
-    // 对于匿名用户，手动返回结果
-    if (agentId === 'anonymous') {
-      return {
-        id,
-        agent_id: agentId,
-        content,
-        upvotes: 0,
-        downvotes: 0,
-        score: 0,
-        created_at: now,
-        agent_name: agentName
-      };
-    }
-
     return getJokeById(id);
-  } catch {
+  } catch (error) {
+    console.error('Failed to create joke:', error);
     return null;
   }
 }
