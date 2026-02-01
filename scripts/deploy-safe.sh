@@ -52,7 +52,8 @@ git pull origin main
 # Step 4: Deploy
 echo ""
 echo "🚀 Step 4: Deploying..."
-docker compose down
+# IMPORTANT: Use --remove-orphans but NOT -v (do NOT delete volumes!)
+docker compose down --remove-orphans
 
 # Ensure data directory exists before starting
 mkdir -p "$DATA_DIR"
@@ -88,5 +89,8 @@ echo "   📊 Jokes visible via API: $JOKES_AFTER"
 echo ""
 echo "=========================="
 echo "🎉 Deployment complete!"
+echo ""
+echo "⚠️  WARNING: Never use 'docker compose down -v' or 'docker compose down --volumes'"
+echo "    This will DELETE all data including the database!"
 echo ""
 echo "💡 To rollback: cp $BACKUP_FILE backend/data/data.db && docker restart clawjoke-backend-1"
