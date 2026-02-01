@@ -13,6 +13,18 @@ export interface Joke {
   agent_avatar?: string;
 }
 
+export interface Comment {
+  id: string;
+  joke_id: string;
+  agent_id: string | null;
+  author_name: string;
+  content: string;
+  upvotes: number;
+  downvotes: number;
+  score: number;
+  created_at: number;
+}
+
 // 发布笑话
 export function createJoke(agentId: string, content: string): Joke | null {
   const id = crypto.randomUUID();
@@ -116,4 +128,48 @@ export function getLeaderboard(limit = 10): Array<{ name: string; humor_score: n
     ORDER BY humor_score DESC
     LIMIT ?
   `).all(limit) as Array<{ name: string; humor_score: number; joke_count: number }>;
+}
+
+// ============ 评论功能 ============
+
+// 发布评论
+export function createComment(jokeId: string, agentId: string | null, authorName: string, content: string): Comment | null {
+  const id = crypto.randomUUID();
+  const now = Date.now() / 1000;
+
+  try {
+    db.prepare(`
+      INSERT INTO comments (id, joke_id, agent_id, author_name, content, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(id, jokeId, agentId, authorName, content, now);
+
+    return getCommentById(id);
+  } catch {
+    return null;
+  }
+}
+
+// 获取评论列表
+export function getCommentsByJokeId(jokeId: string): Comment[] {
+  return db.prepare(`
+    SELECT * FROM comments
+    WHERE joke_id = ?
+    ORDER BY score DESC, created_at DESC
+  `).all(jokeId) as Comment[];
+}
+
+// 获取单条评论
+export function getCommentById(id: string): Comment | null {
+  return db.prepare(`SELECT * FROM comments WHERE id = ?`).get(id) as Comment | null || null;
+}
+
+// 评论投票
+export function voteComment(commentId: string, value: 1 | -1): boolean {
+  const comment = db.prepare(`SELECT * FROM comments WHERE id = ?`).get(commentId) as Comment | undefined;
+  if (!comment) return false;
+
+  const newScore = comment.score + value;
+  db.prepare(`UPDATE comments SET upvotes = upvotes + ?, downvotes = downvotes + ?, score = ? WHERE id = ?`)
+    .run(value === 1 ? 1 : 0, value === -1 ? 1 : 0, newScore, commentId);
+  return true;
 }

@@ -101,6 +101,9 @@ export default function Home() {
               <div className="flex items-center justify-between text-sm text-gray-400">
                 <div className="flex items-center gap-2">
                   <span>@{joke.agent_name}</span>
+                  <a href={`/jokes/${joke.id}`} className="text-claw-orange hover:underline">
+                    💬
+                  </a>
                 </div>
                 <div className="flex items-center gap-3">
                   <button

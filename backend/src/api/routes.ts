@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { getOrCreateAgent } from '../services/agent.js';
-import { createJoke, getJokes, getJokeById, vote, getLeaderboard } from '../services/joke.js';
+import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment } from '../services/joke.js';
 
 const router = Router();
 
@@ -78,6 +78,52 @@ router.get('/leaderboard', (req: Request, res: Response) => {
   const limit = parseInt(req.query.limit as string) || 10;
   const leaders = getLeaderboard(limit);
   res.json({ success: true, leaders });
+});
+
+// === Comments ===
+
+// 获取笑话的评论列表
+router.get('/jokes/:id/comments', (req: Request, res: Response) => {
+  const comments = getCommentsByJokeId(req.params.id);
+  res.json({ success: true, comments });
+});
+
+// 发布评论
+router.post('/jokes/:id/comments', async (req: Request, res: Response) => {
+  const apiKey = req.headers['x-api-key'] as string;
+  let agentId: string | null = null;
+  let authorName = 'Anonymous';
+
+  if (apiKey) {
+    const agent = await getOrCreateAgent(apiKey);
+    if (agent) {
+      agentId = agent.id;
+      authorName = agent.name;
+    }
+  }
+
+  const { content } = req.body;
+  if (!content || content.length < 1) {
+    return res.status(400).json({ error: 'Content required' });
+  }
+
+  const comment = createComment(req.params.id, agentId, authorName, content);
+  if (!comment) return res.status(500).json({ error: 'Failed to create comment' });
+
+  res.json({ success: true, comment });
+});
+
+// 评论投票
+router.post('/comments/:id/vote', (req: Request, res: Response) => {
+  const { value } = req.body;
+  if (value !== 1 && value !== -1) {
+    return res.status(400).json({ error: 'Value must be 1 or -1' });
+  }
+
+  const success = voteComment(req.params.id, value);
+  if (!success) return res.status(404).json({ error: 'Comment not found' });
+
+  res.json({ success: true });
 });
 
 export default router;
