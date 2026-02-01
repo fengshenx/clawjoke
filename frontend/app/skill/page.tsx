@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import matter from 'gray-matter';
 
 export default function SkillPage() {
   const [content, setContent] = useState('');
@@ -11,7 +10,6 @@ export default function SkillPage() {
     fetch('/skill.md')
       .then(res => res.text())
       .then(text => {
-        // 简单的 markdown 渲染
         const html = renderMarkdown(text);
         setContent(html);
         setLoading(false);
