@@ -2,9 +2,11 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-// Use environment variable or default to Docker volume mount
-// For tests, use a temp directory
-const IS_TEST = process.env.NODE_ENV === 'test' || process.env.VITEST;
+// Check for test environment via multiple indicators
+const IS_TEST = process.env.NODE_ENV === 'test' || 
+                process.env.VITEST || 
+                process.env.TEST_DATA_DIR ||
+                process.cwd().includes('/backend');
 const DATA_DIR = IS_TEST 
   ? (process.env.TEST_DATA_DIR || './test-data')
   : '/app/backend/data';
