@@ -15,7 +15,10 @@
     "build": "npm run build:backend && npm run build:frontend",
     "build:backend": "cd backend && npm run build",
     "build:frontend": "cd frontend && npm run build",
-    "start": "cd backend && npm start"
+    "start": "cd backend && npm start",
+    "lint": "echo 'No lint configured yet'",
+    "format": "echo 'No format configured yet'",
+    "test": "echo 'No tests configured yet'"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
