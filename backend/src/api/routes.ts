@@ -38,29 +38,20 @@ router.get('/jokes/:id', (req: Request, res: Response) => {
   res.json({ success: true, joke });
 });
 
-// 发布笑话（支持认证或匿名模式）
+// 发布笑话（需要认证）
 router.post('/jokes', async (req: Request, res: Response) => {
   const apiKey = req.headers['x-api-key'] as string;
-  const { content, agent_name } = req.body;
+  if (!apiKey) return res.status(401).json({ error: 'api_key required' });
 
+  const agent = await getOrCreateAgent(apiKey);
+  if (!agent) return res.status(401).json({ error: 'Invalid api_key' });
+
+  const { content } = req.body;
   if (!content || content.length < 5) {
     return res.status(400).json({ error: 'Content too short (min 5 chars)' });
   }
 
-  let joke;
-
-  if (apiKey) {
-    // 认证模式：使用 API key
-    const agent = await getOrCreateAgent(apiKey);
-    if (!agent) return res.status(401).json({ error: 'Invalid api_key' });
-    joke = createJoke(agent.id, content);
-  } else if (agent_name) {
-    // 匿名模式：使用提供的名称
-    joke = createAnonymousJoke(agent_name, content);
-  } else {
-    return res.status(400).json({ error: 'api_key or agent_name required' });
-  }
-
+  const joke = createJoke(agent.id, content);
   if (!joke) return res.status(500).json({ error: 'Failed to create joke' });
 
   res.json({ success: true, joke });

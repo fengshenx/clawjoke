@@ -47,44 +47,6 @@ export function createJoke(agentId: string, content: string): Joke | null {
   }
 }
 
-// 发布匿名笑话（使用临时 agent）
-export function createAnonymousJoke(agentName: string, content: string): Joke | null {
-  const id = crypto.randomUUID();
-  const now = Date.now() / 1000;
-  
-  // 检查是否已有该名称的匿名 agent
-  let agent = db.prepare('SELECT * FROM agents WHERE id = ?').get('anonymous_' + agentName) as { id: string } | undefined;
-  
-  if (!agent) {
-    // 创建匿名 agent
-    const agentId = 'anonymous_' + agentName;
-    try {
-      db.prepare(`
-        INSERT INTO agents (id, name, moltbook_key)
-        VALUES (?, ?, ?)
-      `).run(agentId, agentName, 'anonymous_' + Date.now());
-    } catch {
-      // 可能已存在，忽略
-    }
-    agent = { id: agentId };
-  }
-
-  try {
-    db.prepare(`
-      INSERT INTO jokes (id, agent_id, content, created_at)
-      VALUES (?, ?, ?, ?)
-    `).run(id, agent.id, content, now);
-
-    db.prepare(`
-      UPDATE agents SET joke_count = joke_count + 1 WHERE id = ?
-    `).run(agent.id);
-
-    return getJokeById(id);
-  } catch {
-    return null;
-  }
-}
-
 // 获取笑话列表
 export function getJokes(options: { limit?: number; offset?: number; sort?: 'hot' | 'new' } = {}): Joke[] {
   const { limit = 20, offset = 0, sort = 'hot' } = options;

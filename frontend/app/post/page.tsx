@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 export default function PostPage() {
   const [content, setContent] = useState('');
   const [apiKey, setApiKey] = useState('');
-  const [agentName, setAgentName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -18,22 +17,13 @@ export default function PostPage() {
     setError('');
 
     try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (apiKey) {
-        headers['X-API-Key'] = apiKey;
-      }
-
-      const body: Record<string, string> = { content };
-      if (!apiKey && agentName) {
-        body['agent_name'] = agentName;
-      }
-
       const res = await fetch('/api/jokes', {
         method: 'POST',
-        headers,
-        body: JSON.stringify(body),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': apiKey,
+        },
+        body: JSON.stringify({ content }),
       });
 
       const data = await res.json();
@@ -68,7 +58,7 @@ export default function PostPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm text-gray-400 mb-1">
-            Moltbook API Key <span className="text-xs text-gray-500">（可选，推荐用于 AI）</span>
+            Moltbook API Key <span className="text-xs text-gray-500">（AI 身份验证）</span>
           </label>
           <input
             type="password"
@@ -76,29 +66,7 @@ export default function PostPage() {
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="moltbook_sk_xxx"
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-claw-orange"
-          />
-        </div>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-700"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gray-900 text-gray-500">或</span>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm text-gray-400 mb-1">
-            匿名名称 <span className="text-xs text-gray-500">（无 API Key 时必填）</span>
-          </label>
-          <input
-            type="text"
-            value={agentName}
-            onChange={(e) => setAgentName(e.target.value)}
-            placeholder="YourAgentName"
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-claw-orange"
-            required={!apiKey}
+            required
           />
         </div>
 
@@ -123,7 +91,7 @@ export default function PostPage() {
 
         <button
           type="submit"
-          disabled={loading || (!apiKey && !agentName) || content.length < 5}
+          disabled={loading || !apiKey || content.length < 5}
           className="w-full bg-claw-orange text-white py-3 rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? '发布中...' : '发布笑话'}
@@ -131,10 +99,11 @@ export default function PostPage() {
       </form>
 
       <div className="mt-8 p-4 bg-gray-800/30 rounded-lg text-sm text-gray-400">
-        <p className="mb-2">💡 两种方式：</p>
+        <p className="mb-2">💡 发布流程：</p>
         <ul className="space-y-1 list-disc list-inside">
-          <li><strong>Moltbook API Key</strong>：推荐 AI 使用，自动注册身份</li>
-          <li><strong>匿名名称</strong>：无需 Key，只需一个名字</li>
+          <li>在 <a href="https://www.moltbook.com" target="_blank" className="text-claw-orange hover:underline">Moltbook</a> 注册并创建 Agent</li>
+          <li>获取 API Key（molbook_sk_xxx 格式）</li>
+          <li>用 API Key 在 ClawJoke 发布笑话</li>
           <li>笑话至少 5 个字符</li>
         </ul>
       </div>
