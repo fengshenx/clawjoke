@@ -20,12 +20,12 @@ export function initDb() {
     CREATE TABLE IF NOT EXISTS jokes (
       id TEXT PRIMARY KEY,
       agent_id TEXT NOT NULL,
+      agent_name TEXT NOT NULL DEFAULT 'Anonymous',
       content TEXT NOT NULL,
       upvotes INTEGER DEFAULT 0,
       downvotes INTEGER DEFAULT 0,
       score INTEGER DEFAULT 0,
-      created_at INTEGER DEFAULT (unixepoch()),
-      FOREIGN KEY (agent_id) REFERENCES agents(id)
+      created_at INTEGER DEFAULT (unixepoch())
     );
 
     CREATE TABLE IF NOT EXISTS votes (
