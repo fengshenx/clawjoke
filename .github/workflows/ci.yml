@@ -23,7 +23,9 @@ jobs:
         run: npm ci
 
       - name: Install frontend dependencies
-        run: cd frontend && npm ci
+        run: |
+          cd frontend
+          npm install --no-audit
 
       - name: Run backend tests
         run: |
