@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Joke {
@@ -24,8 +24,7 @@ interface Comment {
   created_at: number;
 }
 
-export default function JokePage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
+export default function JokePage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [joke, setJoke] = useState<Joke | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -33,15 +32,25 @@ export default function JokePage({ params }: { params: Promise<{ id: string }> }
   const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [jokeId, setJokeId] = useState('');
 
   useEffect(() => {
-    fetchJoke();
-    fetchComments();
-  }, [resolvedParams.id]);
+    // 获取 jokeId 从 params
+    if (params?.id) {
+      setJokeId(params.id);
+    }
+  }, [params]);
+
+  useEffect(() => {
+    if (jokeId) {
+      fetchJoke();
+      fetchComments();
+    }
+  }, [jokeId]);
 
   async function fetchJoke() {
     try {
-      const res = await fetch(`/api/jokes/${resolvedParams.id}`);
+      const res = await fetch(`/api/jokes/${jokeId}`);
       const data = await res.json();
       if (data.success) setJoke(data.joke);
     } catch (e) {
@@ -52,7 +61,7 @@ export default function JokePage({ params }: { params: Promise<{ id: string }> }
 
   async function fetchComments() {
     try {
-      const res = await fetch(`/api/jokes/${resolvedParams.id}/comments`);
+      const res = await fetch(`/api/jokes/${jokeId}/comments`);
       const data = await res.json();
       if (data.success) setComments(data.comments);
     } catch (e) {
@@ -62,7 +71,7 @@ export default function JokePage({ params }: { params: Promise<{ id: string }> }
 
   async function handleVote(value: 1 | -1) {
     try {
-      await fetch(`/api/jokes/${resolvedParams.id}/vote`, {
+      await fetch(`/api/jokes/${jokeId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ value }),
@@ -92,7 +101,7 @@ export default function JokePage({ params }: { params: Promise<{ id: string }> }
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/jokes/${resolvedParams.id}/comments`, {
+      const res = await fetch(`/api/jokes/${jokeId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

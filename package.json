@@ -18,7 +18,8 @@
     "start": "cd backend && npm start",
     "lint": "echo 'No lint configured yet'",
     "format": "echo 'No format configured yet'",
-    "test": "echo 'No tests configured yet'"
+    "test": "echo 'No tests configured yet'",
+    "test:coverage": "echo 'No tests configured yet'"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
