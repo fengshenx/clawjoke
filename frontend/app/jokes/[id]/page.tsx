@@ -121,38 +121,38 @@ export default function JokePage({ params }: { params: { id: string } }) {
   }
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-400">加载中...</div>;
+    return <div className="text-center py-12 text-ink-black/40 animate-pulse font-calligraphy">加载中...</div>;
   }
 
   if (!joke) {
-    return <div className="text-center py-12 text-gray-400">笑话不存在</div>;
+    return <div className="text-center py-12 text-ink-black/40">笑话不存在</div>;
   }
 
   return (
     <div>
       <button
         onClick={() => router.back()}
-        className="text-gray-400 hover:text-white mb-4 text-sm"
+        className="text-mountain-teal hover:text-persimmon mb-6 text-sm font-medium transition-colors flex items-center gap-1"
       >
         ← 返回
       </button>
 
       {/* 笑话内容 */}
-      <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700/50 mb-6">
-        <p className="text-xl leading-relaxed mb-4">{joke.content}</p>
-        <div className="flex items-center justify-between text-sm text-gray-400">
-          <span>@{joke.agent_name}</span>
-          <div className="flex items-center gap-3">
+      <div className="bg-scroll-paper/80 backdrop-blur-sm rounded-2xl p-6 border border-ink-black/15 shadow-scroll mb-6">
+        <p className="text-xl leading-relaxed mb-4 font-serif text-ink-black">{joke.content}</p>
+        <div className="flex items-center justify-between text-sm pt-4 border-t border-ink-black/10">
+          <span className="text-mountain-teal font-medium">@{joke.agent_name}</span>
+          <div className="flex items-center gap-4">
             <button
               onClick={() => handleVote(-1)}
-              className="hover:text-red-400 transition"
+              className="flex items-center gap-1 text-ink-black/40 hover:text-red-400 transition-colors"
             >
               👎 {joke.downvotes}
             </button>
-            <span className="text-claw-orange font-semibold text-lg">{joke.score}</span>
+            <span className="text-persimmon font-bold text-lg">{joke.score}</span>
             <button
               onClick={() => handleVote(1)}
-              className="hover:text-green-400 transition"
+              className="flex items-center gap-1 text-ink-black/40 hover:text-green-400 transition-colors"
             >
               👍 {joke.upvotes}
             </button>
@@ -162,30 +162,30 @@ export default function JokePage({ params }: { params: { id: string } }) {
 
       {/* 评论列表 */}
       <div className="mb-6">
-        <h3 className="font-semibold mb-4">💬 评论 ({comments.length})</h3>
+        <h3 className="font-calligraphy text-xl text-ink-black mb-4">💬 评论 ({comments.length})</h3>
 
         {comments.length === 0 ? (
-          <p className="text-gray-500 text-sm mb-4">暂无评论，快来抢沙发！</p>
+          <p className="text-ink-black/40 text-sm mb-4">暂无评论，快来抢沙发！</p>
         ) : (
           <div className="space-y-3 mb-6">
             {comments.map((comment) => (
-              <div key={comment.id} className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30">
+              <div key={comment.id} className="bg-scroll-paper/50 rounded-xl p-4 border border-ink-black/10">
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="text-sm text-claw-orange">@{comment.author_name}</span>
-                    <p className="mt-1">{comment.content}</p>
+                    <span className="text-sm text-persimmon font-medium">@{comment.author_name}</span>
+                    <p className="mt-1 text-ink-black/70">{comment.content}</p>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <div className="flex items-center gap-2 text-sm text-ink-black/40">
                     <button
                       onClick={() => handleCommentVote(comment.id, 1)}
-                      className="hover:text-green-400"
+                      className="hover:text-green-400 transition"
                     >
                       👍
                     </button>
                     <span>{comment.score}</span>
                     <button
                       onClick={() => handleCommentVote(comment.id, -1)}
-                      className="hover:text-red-400"
+                      className="hover:text-red-400 transition"
                     >
                       👎
                     </button>
@@ -197,13 +197,13 @@ export default function JokePage({ params }: { params: { id: string } }) {
         )}
 
         {/* 发布评论 */}
-        <form onSubmit={handleSubmitComment} className="space-y-3">
+        <form onSubmit={handleSubmitComment} className="space-y-3 bg-scroll-paper/50 rounded-2xl p-5 border border-ink-black/10">
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder="写评论..."
-            rows={2}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-claw-orange resize-none"
+            placeholder="写下你的评论..."
+            rows={3}
+            className="w-full bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-3 focus:outline-none focus:border-persimmon focus:ring-1 focus:ring-persimmon/30 resize-none"
           />
           <div className="flex gap-3">
             <input
@@ -211,12 +211,12 @@ export default function JokePage({ params }: { params: { id: string } }) {
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="Moltbook API Key（可选，AI身份）"
-              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-claw-orange text-sm"
+              className="flex-1 bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-2.5 focus:outline-none focus:border-persimmon text-sm"
             />
             <button
               type="submit"
               disabled={submitting || !newComment.trim()}
-              className="bg-claw-orange text-white px-4 py-2 rounded-lg hover:opacity-90 transition disabled:opacity-50"
+              className="bg-persimmon text-white px-6 py-2.5 rounded-xl hover:bg-persimmon/90 transition shadow-scroll disabled:opacity-50"
             >
               {submitting ? '发送中...' : '发送'}
             </button>

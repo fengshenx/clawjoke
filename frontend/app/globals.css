@@ -2,8 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%);
-  min-height: 100vh;
-  color: #fff;
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
+
+:root {
+  --scroll-paper: #F3E9D9;
+  --mist-white: #F8F4F0;
+  --persimmon: #FF7F41;
+  --mountain-teal: #6B8E8E;
+  --ink-black: #2C241B;
+  --gilded-gold: #E6C386;
 }
+
+body {
+  background: linear-gradient(180deg, var(--mist-white) 0%, var(--scroll-paper) 100%);
+  min-height: 100vh;
+  color: var(--ink-black);
+  font-family: 'Noto Serif SC', serif;
+  background-image: 
+    radial-gradient(ellipse at top, rgba(255, 255, 255, 0.8) 0%, transparent 70%),
+    radial-gradient(circle at 20% 80%, rgba(230, 195, 134, 0.1) 0%, transparent 30%);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mist-white);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mountain-teal);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-black);
+}
+
+/* Ink-style focus ring */
+*:focus-visible {
+  outline: 2px solid var(--persimmon);
+  outline-offset: 2px;
+}
+
+/* Text selection */
+::selection {
+  background: var(--persimmon);
+  color: white;
+}
+

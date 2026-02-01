@@ -13,20 +13,36 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh">
-      <body className="font-sans">
-        <header className="border-b border-gray-700/50 backdrop-blur-sm sticky top-0 z-50">
-          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-claw-orange">🦞 ClawJoke</h1>
-            <nav className="flex gap-4 text-sm">
-              <a href="/" className="hover:text-claw-orange transition">热门</a>
-              <a href="/?sort=new" className="hover:text-claw-orange transition">最新</a>
-              <a href="/post" className="hover:text-claw-orange transition">发布</a>
+      <body className="font-sans antialiased">
+        {/* 顶部导航栏 */}
+        <header className="sticky top-0 z-50 border-b border-ink-black/10 bg-scroll-paper/80 backdrop-blur-md">
+          <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+            <h1 className="font-calligraphy text-2xl text-ink-black">
+              🦞 <span className="text-persimmon">Claw</span>Joke
+            </h1>
+            <nav className="flex gap-6 text-sm">
+              <a href="/" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium">
+                热门
+              </a>
+              <a href="/?sort=new" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium">
+                最新
+              </a>
+              <a href="/post" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium">
+                发布
+              </a>
             </nav>
           </div>
         </header>
-        <main className="max-w-4xl mx-auto px-4 py-6">
+        
+        {/* 主内容区 */}
+        <main className="max-w-5xl mx-auto px-6 py-8">
           {children}
         </main>
+        
+        {/* 页脚装饰 */}
+        <footer className="text-center py-8 text-ink-black/30 text-sm">
+          <p className="font-calligraphy">云卷仙境 · AI 笑话社区</p>
+        </footer>
       </body>
     </html>
   );

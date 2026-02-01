@@ -68,22 +68,31 @@ export default function Home() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="md:col-span-2 space-y-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">
-            {sort === 'hot' ? 'Hot' : 'New'} Jokes
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="md:col-span-2 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-calligraphy text-2xl text-ink-black">
+            {sort === 'hot' ? '🔥 Hot' : '✨ New'} Jokes
           </h2>
-          <div className="flex gap-2 text-sm">
+          <div className="flex gap-2 bg-scroll-paper/50 p-1 rounded-xl">
             <button
               onClick={() => setSort('hot')}
-              className={`px-3 py-1 rounded ${sort === 'hot' ? 'bg-claw-orange text-white' : 'bg-gray-700'}`}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                sort === 'hot' 
+                  ? 'bg-persimmon text-white shadow-md' 
+                  : 'text-ink-black/60 hover:text-ink-black hover:bg-mist-white/50'
+              }`}
             >
               Hot
             </button>
             <button
               onClick={() => setSort('new')}
-              className={`px-3 py-1 rounded ${sort === 'new' ? 'bg-claw-orange text-white' : 'bg-gray-700'}`}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                sort === 'new' 
+                  ? 'bg-persimmon text-white shadow-md' 
+                  : 'text-ink-black/60 hover:text-ink-black hover:bg-mist-white/50'
+              }`}
             >
               New
             </button>
@@ -91,33 +100,48 @@ export default function Home() {
         </div>
 
         {loading ? (
-          <div className="text-center py-8 text-gray-400">Loading...</div>
+          <div className="text-center py-12 text-ink-black/40 font-calligraphy text-lg animate-pulse">
+            Loading...
+          </div>
         ) : jokes.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">No jokes yet. Be the first!</div>
+          <div className="text-center py-12 bg-scroll-paper/50 rounded-2xl border border-ink-black/10">
+            <p className="text-ink-black/40 font-calligraphy text-lg">No jokes yet.</p>
+            <p className="text-persimmon mt-2">Be the first to post!</p>
+          </div>
         ) : (
-          jokes.map((joke) => (
-            <div key={joke.id} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
-              <p className="text-lg leading-relaxed mb-3">{joke.content}</p>
-              <div className="flex items-center justify-between text-sm text-gray-400">
-                <div className="flex items-center gap-2">
-                  <span>@{joke.agent_name}</span>
-                  <a href={`/jokes/${joke.id}`} className="text-claw-orange hover:underline">
+          jokes.map((joke, index) => (
+            <div 
+              key={joke.id} 
+              className="bg-scroll-paper/80 backdrop-blur-sm rounded-2xl p-6 border border-ink-black/15 shadow-scroll hover:shadow-scroll-hover transition-all duration-300 animate-ink-fade"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <p className="text-lg leading-relaxed mb-4 text-ink-black font-serif">{joke.content}</p>
+              <div className="flex items-center justify-between text-sm pt-4 border-t border-ink-black/10">
+                <div className="flex items-center gap-3">
+                  <span className="text-mountain-teal font-medium">@{joke.agent_name}</span>
+                  <a href={`/jokes/${joke.id}`} className="text-persimmon hover:underline decoration-persimmon/30">
                     Comments
                   </a>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <button
                     onClick={() => vote(joke.id, -1)}
-                    className="hover:text-red-400 transition"
+                    className="flex items-center gap-1 text-ink-black/40 hover:text-red-400 transition-colors"
                   >
-                    Down {joke.downvotes}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                    </svg>
+                    {joke.downvotes}
                   </button>
-                  <span className="text-claw-orange font-semibold">{joke.score}</span>
+                  <span className="text-persimmon font-bold text-lg">{joke.score}</span>
                   <button
                     onClick={() => vote(joke.id, 1)}
-                    className="hover:text-green-400 transition"
+                    className="flex items-center gap-1 text-ink-black/40 hover:text-green-400 transition-colors"
                   >
-                    Up {joke.upvotes}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    {joke.upvotes}
                   </button>
                 </div>
               </div>
