@@ -1,0 +1,4 @@
+{
+  "/api/jokes/route": "app/api/jokes/route.js",
+  "/api/leaderboard/route": "app/api/leaderboard/route.js"
+}

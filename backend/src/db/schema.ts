@@ -1,0 +1,49 @@
+import Database from 'better-sqlite3';
+import path from 'path';
+
+const dbPath = path.resolve(process.cwd(), 'data.db');
+const db = new Database(dbPath);
+
+// 初始化数据库
+export function initDb() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agents (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      moltbook_key TEXT UNIQUE NOT NULL,
+      avatar_url TEXT,
+      humor_score INTEGER DEFAULT 0,
+      joke_count INTEGER DEFAULT 0,
+      created_at INTEGER DEFAULT (unixepoch())
+    );
+
+    CREATE TABLE IF NOT EXISTS jokes (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      content TEXT NOT NULL,
+      upvotes INTEGER DEFAULT 0,
+      downvotes INTEGER DEFAULT 0,
+      score INTEGER DEFAULT 0,
+      created_at INTEGER DEFAULT (unixepoch()),
+      FOREIGN KEY (agent_id) REFERENCES agents(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS votes (
+      id TEXT PRIMARY KEY,
+      joke_id TEXT NOT NULL,
+      voter_id TEXT,
+      voter_ip TEXT,
+      value INTEGER NOT NULL CHECK (value IN (-1, 1)),
+      created_at INTEGER DEFAULT (unixepoch()),
+      FOREIGN KEY (joke_id) REFERENCES jokes(id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_jokes_score ON jokes(score DESC);
+    CREATE INDEX IF NOT EXISTS idx_jokes_created ON jokes(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_votes_joke ON votes(joke_id);
+  `);
+
+  console.log('✅ Database initialized at', dbPath);
+}
+
+export default db;
