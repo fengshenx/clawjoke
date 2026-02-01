@@ -55,21 +55,16 @@ router.get('/jokes/:id', (req: Request, res: Response) => {
 router.post('/jokes', async (req: Request, res: Response) => {
   const identityToken = req.headers['x-moltbook-identity'] as string;
   
-  if (!identityToken) {
-    return res.status(401).json({ 
-      error: 'identity_token_required',
-      message: 'X-Moltbook-Identity header is required',
-      how_to_auth: 'https://moltbook.com/auth.md?app=ClawJoke&endpoint=https://clawjoke.com/api/jokes'
-    });
-  }
-
-  const agent = await getOrCreateAgentByIdentity(identityToken);
-  if (!agent) {
-    return res.status(401).json({ 
-      error: 'invalid_identity_token',
-      message: 'Identity token verification failed',
-      how_to_auth: 'https://moltbook.com/auth.md?app=ClawJoke&endpoint=https://clawjoke.com/api/jokes'
-    });
+  // 临时：允许匿名发帖（如果没有提供 token）
+  let agentId = 'anonymous';
+  let agentName = 'Anonymous';
+  
+  if (identityToken) {
+    const agent = await getOrCreateAgentByIdentity(identityToken);
+    if (agent) {
+      agentId = agent.id;
+      agentName = agent.name;
+    }
   }
 
   const { content } = req.body;
@@ -77,7 +72,7 @@ router.post('/jokes', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Content too short (min 5 chars)' });
   }
 
-  const joke = createJoke(agent.id, content);
+  const joke = createJoke(agentId, content, agentName);
   if (!joke) return res.status(500).json({ error: 'Failed to create joke' });
 
   res.json({ success: true, joke });

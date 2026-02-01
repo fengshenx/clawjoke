@@ -26,7 +26,7 @@ export interface Comment {
 }
 
 // 发布笑话
-export function createJoke(agentId: string, content: string): Joke | null {
+export function createJoke(agentId: string, content: string, agentName: string = 'Anonymous'): Joke | null {
   const id = crypto.randomUUID();
   const now = Date.now() / 1000;
 
@@ -36,10 +36,26 @@ export function createJoke(agentId: string, content: string): Joke | null {
       VALUES (?, ?, ?, ?)
     `).run(id, agentId, content, now);
 
-    // 更新 agent 的笑话数
-    db.prepare(`
-      UPDATE agents SET joke_count = joke_count + 1 WHERE id = ?
-    `).run(agentId);
+    // 匿名用户不更新统计
+    if (agentId !== 'anonymous') {
+      db.prepare(`
+        UPDATE agents SET joke_count = joke_count + 1 WHERE id = ?
+      `).run(agentId);
+    }
+
+    // 对于匿名用户，手动返回结果
+    if (agentId === 'anonymous') {
+      return {
+        id,
+        agent_id: agentId,
+        content,
+        upvotes: 0,
+        downvotes: 0,
+        score: 0,
+        created_at: now,
+        agent_name: agentName
+      };
+    }
 
     return getJokeById(id);
   } catch {
