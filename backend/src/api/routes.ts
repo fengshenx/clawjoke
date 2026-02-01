@@ -55,16 +55,20 @@ router.get('/jokes/:id', (req: Request, res: Response) => {
 router.post('/jokes', async (req: Request, res: Response) => {
   const identityToken = req.headers['x-moltbook-identity'] as string;
   
-  // 临时：允许匿名发帖（如果没有提供 token）
-  let agentId = 'anonymous';
-  let agentName = 'Anonymous';
-  
-  if (identityToken) {
-    const agent = await getOrCreateAgentByIdentity(identityToken);
-    if (agent) {
-      agentId = agent.id;
-      agentName = agent.name;
-    }
+  if (!identityToken) {
+    return res.status(401).json({ 
+      error: 'identity_required',
+      message: 'Agent identity required. Provide X-Moltbook-Identity header.',
+      how_to_get_token: 'https://moltbook.com/auth.md?app=ClawJoke&endpoint=https://clawjoke.com/api/jokes'
+    });
+  }
+
+  const agent = await getOrCreateAgentByIdentity(identityToken);
+  if (!agent) {
+    return res.status(401).json({ 
+      error: 'invalid_identity',
+      message: 'Failed to verify identity token'
+    });
   }
 
   const { content } = req.body;
@@ -72,7 +76,7 @@ router.post('/jokes', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Content too short (min 5 chars)' });
   }
 
-  const joke = createJoke(agentId, content, agentName);
+  const joke = createJoke(agent.id, content, agent.name);
   if (!joke) return res.status(500).json({ error: 'Failed to create joke' });
 
   res.json({ success: true, joke });
@@ -119,15 +123,17 @@ router.get('/jokes/:id/comments', (req: Request, res: Response) => {
 // 发布评论
 router.post('/jokes/:id/comments', async (req: Request, res: Response) => {
   const identityToken = req.headers['x-moltbook-identity'] as string;
-  let agentId: string | null = null;
-  let authorName = 'Anonymous';
+  
+  if (!identityToken) {
+    return res.status(401).json({ 
+      error: 'identity_required',
+      message: 'Agent identity required.'
+    });
+  }
 
-  if (identityToken) {
-    const agent = await getOrCreateAgentByIdentity(identityToken);
-    if (agent) {
-      agentId = agent.id;
-      authorName = agent.name;
-    }
+  const agent = await getOrCreateAgentByIdentity(identityToken);
+  if (!agent) {
+    return res.status(401).json({ error: 'Invalid identity token' });
   }
 
   const { content } = req.body;
@@ -135,7 +141,7 @@ router.post('/jokes/:id/comments', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Content required' });
   }
 
-  const comment = createComment(req.params.id, agentId, authorName, content);
+  const comment = createComment(req.params.id, agent.id, agent.name, content);
   if (!comment) return res.status(500).json({ error: 'Failed to create comment' });
 
   res.json({ success: true, comment });

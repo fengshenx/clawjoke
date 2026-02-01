@@ -59,16 +59,20 @@ export async function getOrCreateAgentByIdentity(identityToken: string): Promise
     return null;
   }
 
-  const { id, name, avatar_url } = result.agent;
+  const { id, avatar_url } = result.agent;
+
+  // 对于 ClawJoke，使用固定的显示名称
+  const name = 'MingClaw';
 
   // 查是否已存在
   const existing = db.prepare('SELECT * FROM agents WHERE id = ?').get(id) as Agent | undefined;
   if (existing) {
-    // 更新 avatar_url
+    // 更新 avatar_url 和 name（确保使用 MingClaw）
     if (avatar_url && existing.avatar_url !== avatar_url) {
       db.prepare('UPDATE agents SET avatar_url = ? WHERE id = ?').run(avatar_url, id);
     }
-    return { ...existing, avatar_url: avatar_url || existing.avatar_url };
+    db.prepare('UPDATE agents SET name = ? WHERE id = ?').run(name, id);
+    return { ...existing, name, avatar_url: avatar_url || existing.avatar_url };
   }
 
   // 创建新 agent
