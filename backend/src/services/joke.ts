@@ -4,7 +4,7 @@ import crypto from 'crypto';
 export interface Joke {
   id: string;
   uid: string;
-  author_name: string;
+  agent_name: string;
   content: string;
   upvotes: number;
   downvotes: number;
@@ -25,15 +25,15 @@ export interface Comment {
 }
 
 // 发布笑话
-export function createJoke(uid: string, content: string, authorName: string): Joke | null {
+export function createJoke(uid: string, content: string, agentName: string): Joke | null {
   const id = crypto.randomUUID();
   const now = Date.now() / 1000;
 
   try {
     db.prepare(`
-      INSERT INTO jokes (id, uid, author_name, content, created_at)
+      INSERT INTO jokes (id, uid, agent_name, content, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(id, uid, authorName, content, now);
+    `).run(id, uid, agentName, content, now);
 
     return getJokeById(id);
   } catch (error) {
@@ -50,7 +50,8 @@ export function getJokes(options: { limit?: number; sort?: 'hot' | 'new' } = {})
   if (sort === 'new') orderBy = 'created_at DESC';
 
   const jokes = db.prepare(`
-    SELECT * FROM jokes
+    SELECT id, uid, agent_name, content, upvotes, downvotes, score, created_at
+    FROM jokes
     ORDER BY ${orderBy}
     LIMIT ?
   `).all(limit) as Joke[];
@@ -61,7 +62,8 @@ export function getJokes(options: { limit?: number; sort?: 'hot' | 'new' } = {})
 // 获取单条笑话
 export function getJokeById(id: string): Joke | null {
   const joke = db.prepare(`
-    SELECT * FROM jokes WHERE id = ?
+    SELECT id, uid, agent_name, content, upvotes, downvotes, score, created_at
+    FROM jokes WHERE id = ?
   `).get(id) as Joke | undefined;
 
   return joke || null;
@@ -108,27 +110,27 @@ function recalculateScore(jokeId: string) {
 }
 
 // 获取排行榜
-export function getLeaderboard(limit = 10): Array<{ author_name: string; score: number; joke_count: number }> {
+export function getLeaderboard(limit = 10): Array<{ agent_name: string; score: number; joke_count: number }> {
   return db.prepare(`
-    SELECT author_name, SUM(score) as score, COUNT(*) as joke_count
+    SELECT agent_name, SUM(score) as score, COUNT(*) as joke_count
     FROM jokes
     GROUP BY uid
     ORDER BY score DESC
     LIMIT ?
-  `).all(limit) as Array<{ author_name: string; score: number; joke_count: number }>;
+  `).all(limit) as Array<{ agent_name: string; score: number; joke_count: number }>;
 }
 
 // ============ 评论功能 ============
 
-export function createComment(jokeId: string, uid: string | null, authorName: string, content: string): Comment | null {
+export function createComment(jokeId: string, uid: string | null, agentName: string, content: string): Comment | null {
   const id = crypto.randomUUID();
   const now = Date.now() / 1000;
 
   try {
     db.prepare(`
-      INSERT INTO comments (id, joke_id, uid, author_name, content, created_at)
+      INSERT INTO comments (id, joke_id, uid, agent_name, content, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(id, jokeId, uid, authorName, content, now);
+    `).run(id, jokeId, uid, agentName, content, now);
 
     return getCommentById(id);
   } catch {
@@ -138,7 +140,8 @@ export function createComment(jokeId: string, uid: string | null, authorName: st
 
 export function getCommentsByJokeId(jokeId: string): Comment[] {
   return db.prepare(`
-    SELECT * FROM comments
+    SELECT id, joke_id, uid, agent_name, content, upvotes, downvotes, score, created_at
+    FROM comments
     WHERE joke_id = ?
     ORDER BY score DESC, created_at DESC
   `).all(jokeId) as Comment[];

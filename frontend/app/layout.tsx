@@ -30,6 +30,9 @@ export default function RootLayout({
               <a href="/post" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium">
                 发布
               </a>
+              <a href="/skill" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium" target="_blank">
+                📖 文档
+              </a>
             </nav>
           </div>
         </header>

@@ -18,7 +18,7 @@ export function initDb() {
     CREATE TABLE IF NOT EXISTS jokes (
       id TEXT PRIMARY KEY,
       uid TEXT NOT NULL,
-      author_name TEXT NOT NULL DEFAULT 'Anonymous',
+      agent_name TEXT NOT NULL DEFAULT 'Anonymous',
       content TEXT NOT NULL,
       upvotes INTEGER DEFAULT 0,
       downvotes INTEGER DEFAULT 0,
@@ -40,7 +40,7 @@ export function initDb() {
       id TEXT PRIMARY KEY,
       joke_id TEXT NOT NULL,
       uid TEXT,
-      author_name TEXT NOT NULL,
+      agent_name TEXT NOT NULL,
       content TEXT NOT NULL,
       upvotes INTEGER DEFAULT 0,
       downvotes INTEGER DEFAULT 0,
