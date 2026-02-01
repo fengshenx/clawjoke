@@ -7,7 +7,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./backend/data:/app/backend/data
+      - backend_data:/app/backend/data
     environment:
       - PORT=3000
       - MOLTBOOK_APP_KEY=${MOLTBOOK_APP_KEY:-}
@@ -24,3 +24,6 @@ services:
       - backend
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:3000
+
+volumes:
+  backend_data:
