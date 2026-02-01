@@ -1,7 +1,16 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-const dbPath = path.resolve(process.cwd(), 'data.db');
+// Use /app/backend/data for Docker volume mount
+const DATA_DIR = '/app/backend/data';
+const dbPath = path.join(DATA_DIR, 'data.db');
+
+// Ensure data directory exists
+import fs from 'fs';
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
 const db = new Database(dbPath);
 
 // 初始化数据库

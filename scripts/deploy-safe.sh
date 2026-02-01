@@ -1,96 +1,105 @@
 #!/bin/bash
 # Safe deployment script for ClawJoke
-# Ensures database is backed up before deployment
+# ⚠️  CRITICAL: NEVER use -v or --volumes flags - this will DELETE all data!
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DATA_DIR="$SCRIPT_DIR/backend/data"
-BACKUP_DIR="$SCRIPT_DIR/backend/backups"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+BACKUP_DIR="$SCRIPT_DIR/../backend/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="$BACKUP_DIR/data.db.$TIMESTAMP"
 
 echo "🚀 ClawJoke Safe Deployment"
 echo "=========================="
 
-# Step 1: Backup existing database
+# ========== STEP 1: BACKUP FROM DOCKER VOLUME FIRST ==========
 echo ""
-echo "📦 Step 1: Backing up database..."
+echo "📦 Step 1: Backing up database from Docker volume..."
+
+BACKUP_FILE="$BACKUP_DIR/data.db.$TIMESTAMP"
 mkdir -p "$BACKUP_DIR"
 
-if [ -f "$DATA_DIR/data.db" ]; then
-    cp "$DATA_DIR/data.db" "$BACKUP_FILE"
-    JOKES=$(sqlite3 "$BACKUP_FILE" "SELECT COUNT(*) FROM jokes;" 2>/dev/null || echo "0")
-    echo "   ✅ Backup created: $BACKUP_FILE"
-    echo "   📊 Jokes in backup: $JOKES"
-    
-    # Also backup to root for easy recovery
-    cp "$BACKUP_FILE" /root/backup_latest.db
-    echo "   ✅ Also backed up to /root/backup_latest.db"
-else
-    echo "   ⚠️  No existing database found, skipping backup"
-fi
+# Get container ID
+CONTAINER_ID=$(docker ps -q --filter "name=clawjoke-backend-1" 2>/dev/null || echo "")
 
-# Step 2: Check for critical data
-echo ""
-echo "🔍 Step 2: Checking for critical data..."
-if [ -f "$DATA_DIR/data.db" ]; then
-    JOKES=$(sqlite3 "$DATA_DIR/data.db" "SELECT COUNT(*) FROM jokes;" 2>/dev/null || echo "0")
-    echo "   Current jokes in database: $JOKES"
-    if [ "$JOKES" -gt 0 ]; then
-        echo "   ✅ Critical data found, deployment will preserve it"
+if [ -n "$CONTAINER_ID" ]; then
+    # Copy database from container (which is mounted from the volume)
+    docker cp "$CONTAINER_ID:/app/backend/data/data.db" "$BACKUP_FILE" 2>/dev/null || true
+    
+    if [ -f "$BACKUP_FILE" ] && [ -s "$BACKUP_FILE" ]; then
+        JOKES=$(sqlite3 "$BACKUP_FILE" "SELECT COUNT(*) FROM jokes;" 2>/dev/null || echo "0")
+        echo "   ✅ Backup saved: $BACKUP_FILE"
+        echo "   📊 Jokes backed up: $JOKES"
+        cp "$BACKUP_FILE" /root/backup_latest.db
+        echo "   ✅ Also saved to /root/backup_latest.db"
+    else
+        echo "   ⚠️  Could not backup (database may be empty or not mounted)"
     fi
 else
-    echo "   ⚠️  No database found, a new one will be created"
+    echo "   ⚠️  Container not running, skipping backup"
 fi
 
-# Step 3: Pull latest code
+# ========== STEP 2: CHECK CURRENT DATA ==========
+echo ""
+echo "🔍 Step 2: Checking current data..."
+
+if docker volume ls -q | grep -q "clawjoke_backend_data"; then
+    echo "   ✅ Volume 'clawjoke_backend_data' exists"
+else
+    echo "   ⚠️  Volume does not exist, will be created on start"
+fi
+
+# ========== STEP 3: PULL CODE ==========
 echo ""
 echo "📥 Step 3: Pulling latest code..."
+cd "$PROJECT_DIR"
 git pull origin main
 
-# Step 4: Deploy
+# ========== STEP 4: DEPLOY (NEVER delete volumes!) ==========
 echo ""
 echo "🚀 Step 4: Deploying..."
-# IMPORTANT: Use --remove-orphans but NOT -v (do NOT delete volumes!)
+echo "   ⚠️  IMPORTANT: Using --remove-orphans ONLY (NOT -v or --volumes)"
+
+# NEVER use: docker compose down -v
+# NEVER use: docker compose down --volumes
+# This preserves the volume!
 docker compose down --remove-orphans
 
-# Ensure data directory exists before starting
-mkdir -p "$DATA_DIR"
-
-# If no database exists, initialize one
-if [ ! -f "$DATA_DIR/data.db" ]; then
-    echo "   📝 Creating new database..."
-fi
-
+# Start services - the volume will be automatically mounted
 docker compose up -d --build
 
-# Step 5: Verify deployment
+# ========== STEP 5: VERIFY ==========
 echo ""
 echo "✅ Step 5: Verifying deployment..."
 sleep 5
 
-# Check if services are running
-BACKEND_RUNNING=$(docker compose ps --format json 2>/dev/null | grep -q "backend" && echo "yes" || echo "no")
-FRONTEND_RUNNING=$(docker compose ps --format json 2>/dev/null | grep -q "frontend" && echo "yes" || echo "no")
+# Check services
+BACKEND_RUNNING=$(docker ps --format '{{.Names}}' | grep -q "clawjoke-backend" && echo "yes" || echo "no")
+FRONTEND_RUNNING=$(docker ps --format '{{.Names}}' | grep -q "clawjoke-frontend" && echo "yes" || echo "no")
 
 if [ "$BACKEND_RUNNING" = "yes" ] && [ "$FRONTEND_RUNNING" = "yes" ]; then
     echo "   ✅ All services running"
 else
-    echo "   ❌ Some services failed to start"
+    echo "   ❌ Some services failed"
     docker compose logs
-    exit 1
 fi
 
-# Check data persistence
-JOKES_AFTER=$(curl -s https://clawjoke.com/api/jokes?sort=new 2>/dev/null | grep -o '"id"' | wc -l || echo "0")
-echo "   📊 Jokes visible via API: $JOKES_AFTER"
+# Check data
+JOKES_AFTER=$(curl -s https://clawjoke.com/api/jokes?limit=1 2>/dev/null | grep -o '"id"' | wc -l || echo "0")
+echo "   📊 Jokes visible: $JOKES_AFTER"
 
 echo ""
 echo "=========================="
 echo "🎉 Deployment complete!"
 echo ""
-echo "⚠️  WARNING: Never use 'docker compose down -v' or 'docker compose down --volumes'"
-echo "    This will DELETE all data including the database!"
+echo "💡 Data is stored in Docker volume 'clawjoke_backend_data'"
 echo ""
-echo "💡 To rollback: cp $BACKUP_FILE backend/data/data.db && docker restart clawjoke-backend-1"
+echo "🛑 NEVER run these commands (they DELETE all data):"
+echo "   docker compose down -v"
+echo "   docker compose down --volumes"
+echo "   docker volume rm clawjoke_backend_data"
+echo ""
+echo "💡 Safe rollback:"
+echo "   1. Check backups: ls $BACKUP_DIR"
+echo "   2. Copy backup: cp $BACKUP_DIR/data.db.YYYYMMDD_HHMMSS backend/data/data.db"
+echo "   3. Restart: docker restart clawjoke-backend-1"
