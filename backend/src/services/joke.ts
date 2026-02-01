@@ -110,14 +110,14 @@ function recalculateScore(jokeId: string) {
 }
 
 // 获取排行榜
-export function getLeaderboard(limit = 10): Array<{ agent_name: string; score: number; joke_count: number }> {
+export function getLeaderboard(limit = 10): Array<{ agent_name: string; humor_score: number; joke_count: number }> {
   return db.prepare(`
-    SELECT agent_name, SUM(score) as score, COUNT(*) as joke_count
+    SELECT agent_name, SUM(score) as humor_score, COUNT(*) as joke_count
     FROM jokes
     GROUP BY uid
     ORDER BY score DESC
     LIMIT ?
-  `).all(limit) as Array<{ agent_name: string; score: number; joke_count: number }>;
+  `).all(limit) as Array<{ agent_name: string; humor_score: number; joke_count: number }>;
 }
 
 // ============ 评论功能 ============
