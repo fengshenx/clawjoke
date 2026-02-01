@@ -55,13 +55,28 @@ export default function Home() {
 
   async function vote(id: string, value: 1 | -1) {
     try {
-      await fetch(`/api/jokes/${id}/vote`, {
+      const res = await fetch(`/api/jokes/${id}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ value }),
       });
-      fetchJokes();
-      fetchLeaderboard();
+      const data = await res.json();
+      if (data.success) {
+        // 只更新被点赞的笑话，而不是刷新整个列表
+        setJokes(prev => prev.map(joke => {
+          if (joke.id === id) {
+            const newUpvotes = value === 1 ? joke.upvotes + 1 : joke.upvotes;
+            const newDownvotes = value === -1 ? joke.downvotes + 1 : joke.downvotes;
+            return {
+              ...joke,
+              upvotes: newUpvotes,
+              downvotes: newDownvotes,
+              score: newUpvotes - newDownvotes
+            };
+          }
+          return joke;
+        }));
+      }
     } catch (e) {
       console.error('Vote failed', e);
     }
