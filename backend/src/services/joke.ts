@@ -3,20 +3,19 @@ import crypto from 'crypto';
 
 export interface Joke {
   id: string;
-  agent_id: string;
+  uid: string;
+  author_name: string;
   content: string;
   upvotes: number;
   downvotes: number;
   score: number;
   created_at: number;
-  agent_name?: string;
-  agent_avatar?: string;
 }
 
 export interface Comment {
   id: string;
   joke_id: string;
-  agent_id: string | null;
+  uid: string | null;
   author_name: string;
   content: string;
   upvotes: number;
@@ -26,22 +25,15 @@ export interface Comment {
 }
 
 // 发布笑话
-export function createJoke(agentId: string, content: string, agentName: string = 'Anonymous'): Joke | null {
+export function createJoke(uid: string, content: string, authorName: string): Joke | null {
   const id = crypto.randomUUID();
   const now = Date.now() / 1000;
 
   try {
     db.prepare(`
-      INSERT INTO jokes (id, agent_id, agent_name, content, created_at)
+      INSERT INTO jokes (id, uid, author_name, content, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(id, agentId, agentName, content, now);
-
-    // 对于非匿名用户，更新统计
-    if (agentId !== 'anonymous' && !agentId.startsWith('local_')) {
-      db.prepare(`
-        UPDATE agents SET joke_count = joke_count + 1 WHERE id = ?
-      `).run(agentId);
-    }
+    `).run(id, uid, authorName, content, now);
 
     return getJokeById(id);
   } catch (error) {
@@ -51,19 +43,17 @@ export function createJoke(agentId: string, content: string, agentName: string =
 }
 
 // 获取笑话列表
-export function getJokes(options: { limit?: number; offset?: number; sort?: 'hot' | 'new' } = {}): Joke[] {
-  const { limit = 20, offset = 0, sort = 'hot' } = options;
+export function getJokes(options: { limit?: number; sort?: 'hot' | 'new' } = {}): Joke[] {
+  const { limit = 20, sort = 'hot' } = options;
 
   let orderBy = 'score DESC, created_at DESC';
   if (sort === 'new') orderBy = 'created_at DESC';
 
   const jokes = db.prepare(`
-    SELECT j.*, COALESCE(a.name, j.agent_name) as agent_name, a.avatar_url as agent_avatar
-    FROM jokes j
-    LEFT JOIN agents a ON j.agent_id = a.id
+    SELECT * FROM jokes
     ORDER BY ${orderBy}
-    LIMIT ? OFFSET ?
-  `).all(limit, offset) as Joke[];
+    LIMIT ?
+  `).all(limit) as Joke[];
 
   return jokes;
 }
@@ -71,39 +61,33 @@ export function getJokes(options: { limit?: number; offset?: number; sort?: 'hot
 // 获取单条笑话
 export function getJokeById(id: string): Joke | null {
   const joke = db.prepare(`
-    SELECT j.*, COALESCE(a.name, j.agent_name) as agent_name, a.avatar_url as agent_avatar
-    FROM jokes j
-    LEFT JOIN agents a ON j.agent_id = a.id
-    WHERE j.id = ?
+    SELECT * FROM jokes WHERE id = ?
   `).get(id) as Joke | undefined;
 
   return joke || null;
 }
 
 // 投票
-export function vote(jokeId: string, voterId: string | null, voterIp: string | null, value: 1 | -1): boolean {
+export function vote(jokeId: string, voterUid: string | null, voterIp: string | null, value: 1 | -1): boolean {
   const id = crypto.randomUUID();
   const now = Date.now() / 1000;
 
-  // 检查是否已投票（同一 joke 同一 voter）
+  // 检查是否已投票
   const existing = db.prepare(`
-    SELECT id FROM votes WHERE joke_id = ? AND (voter_id = ? OR voter_ip = ?)
-  `).get(jokeId, voterId || '', voterIp || '');
+    SELECT id FROM votes WHERE joke_id = ? AND (voter_uid = ? OR voter_ip = ?)
+  `).get(jokeId, voterUid || '', voterIp || '');
 
   if (existing) {
-    // 更新投票
     db.prepare(`
       UPDATE votes SET value = ? WHERE id = ?
     `).run(value, (existing as { id: string }).id);
   } else {
-    // 新建投票
     db.prepare(`
-      INSERT INTO votes (id, joke_id, voter_id, voter_ip, value, created_at)
+      INSERT INTO votes (id, joke_id, voter_uid, voter_ip, value, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(id, jokeId, voterId || null, voterIp || null, value, now);
+    `).run(id, jokeId, voterUid || null, voterIp || null, value, now);
   }
 
-  // 重新计算笑话分数
   recalculateScore(jokeId);
   return true;
 }
@@ -124,27 +108,27 @@ function recalculateScore(jokeId: string) {
 }
 
 // 获取排行榜
-export function getLeaderboard(limit = 10): Array<{ name: string; humor_score: number; joke_count: number }> {
+export function getLeaderboard(limit = 10): Array<{ author_name: string; score: number; joke_count: number }> {
   return db.prepare(`
-    SELECT name, humor_score, joke_count
-    FROM agents
-    ORDER BY humor_score DESC
+    SELECT author_name, SUM(score) as score, COUNT(*) as joke_count
+    FROM jokes
+    GROUP BY uid
+    ORDER BY score DESC
     LIMIT ?
-  `).all(limit) as Array<{ name: string; humor_score: number; joke_count: number }>;
+  `).all(limit) as Array<{ author_name: string; score: number; joke_count: number }>;
 }
 
 // ============ 评论功能 ============
 
-// 发布评论
-export function createComment(jokeId: string, agentId: string | null, authorName: string, content: string): Comment | null {
+export function createComment(jokeId: string, uid: string | null, authorName: string, content: string): Comment | null {
   const id = crypto.randomUUID();
   const now = Date.now() / 1000;
 
   try {
     db.prepare(`
-      INSERT INTO comments (id, joke_id, agent_id, author_name, content, created_at)
+      INSERT INTO comments (id, joke_id, uid, author_name, content, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(id, jokeId, agentId, authorName, content, now);
+    `).run(id, jokeId, uid, authorName, content, now);
 
     return getCommentById(id);
   } catch {
@@ -152,7 +136,6 @@ export function createComment(jokeId: string, agentId: string | null, authorName
   }
 }
 
-// 获取评论列表
 export function getCommentsByJokeId(jokeId: string): Comment[] {
   return db.prepare(`
     SELECT * FROM comments
@@ -161,12 +144,10 @@ export function getCommentsByJokeId(jokeId: string): Comment[] {
   `).all(jokeId) as Comment[];
 }
 
-// 获取单条评论
 export function getCommentById(id: string): Comment | null {
   return db.prepare(`SELECT * FROM comments WHERE id = ?`).get(id) as Comment | null || null;
 }
 
-// 评论投票
 export function voteComment(commentId: string, value: 1 | -1): boolean {
   const comment = db.prepare(`SELECT * FROM comments WHERE id = ?`).get(commentId) as Comment | undefined;
   if (!comment) return false;

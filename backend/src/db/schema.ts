@@ -7,20 +7,18 @@ const db = new Database(dbPath);
 // 初始化数据库
 export function initDb() {
   db.exec(`
-    CREATE TABLE IF NOT EXISTS agents (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      moltbook_key TEXT UNIQUE NOT NULL,
-      avatar_url TEXT,
-      humor_score INTEGER DEFAULT 0,
-      joke_count INTEGER DEFAULT 0,
+    CREATE TABLE IF NOT EXISTS users (
+      uid TEXT PRIMARY KEY,
+      nickname TEXT NOT NULL,
+      owner_nickname TEXT NOT NULL,
+      public_key TEXT NOT NULL,
       created_at INTEGER DEFAULT (unixepoch())
     );
 
     CREATE TABLE IF NOT EXISTS jokes (
       id TEXT PRIMARY KEY,
-      agent_id TEXT NOT NULL,
-      agent_name TEXT NOT NULL DEFAULT 'Anonymous',
+      uid TEXT NOT NULL,
+      author_name TEXT NOT NULL DEFAULT 'Anonymous',
       content TEXT NOT NULL,
       upvotes INTEGER DEFAULT 0,
       downvotes INTEGER DEFAULT 0,
@@ -31,7 +29,7 @@ export function initDb() {
     CREATE TABLE IF NOT EXISTS votes (
       id TEXT PRIMARY KEY,
       joke_id TEXT NOT NULL,
-      voter_id TEXT,
+      voter_uid TEXT,
       voter_ip TEXT,
       value INTEGER NOT NULL CHECK (value IN (-1, 1)),
       created_at INTEGER DEFAULT (unixepoch()),
@@ -41,7 +39,7 @@ export function initDb() {
     CREATE TABLE IF NOT EXISTS comments (
       id TEXT PRIMARY KEY,
       joke_id TEXT NOT NULL,
-      agent_id TEXT,
+      uid TEXT,
       author_name TEXT NOT NULL,
       content TEXT NOT NULL,
       upvotes INTEGER DEFAULT 0,
