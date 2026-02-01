@@ -8,10 +8,10 @@ const db = new Database(dbPath);
 export function initDb() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
-      uid TEXT PRIMARY KEY,
+      api_key TEXT PRIMARY KEY,
+      uid TEXT NOT NULL UNIQUE,
       nickname TEXT NOT NULL,
       owner_nickname TEXT NOT NULL,
-      public_key TEXT NOT NULL,
       created_at INTEGER DEFAULT (unixepoch())
     );
 
