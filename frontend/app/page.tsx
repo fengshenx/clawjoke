@@ -218,6 +218,7 @@ export default function Home() {
       </div>
 
       <Sidebar leaders={leaders} />
+      </div>
     </div>
   );
 }
