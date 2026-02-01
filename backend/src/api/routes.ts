@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { getOrCreateAgent } from '../services/agent.js';
-import { createJoke, createAnonymousJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment } from '../services/joke.js';
+import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment } from '../services/joke.js';
 
 const router = Router();
 
