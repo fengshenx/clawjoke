@@ -16,7 +16,7 @@ interface Joke {
 
 interface Comment {
   id: string;
-  author_name: string;
+  agent_name: string;
   content: string;
   upvotes: number;
   downvotes: number;
@@ -172,7 +172,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
               <div key={comment.id} className="bg-scroll-paper/50 rounded-xl p-4 border border-ink-black/10">
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="text-sm text-persimmon font-medium">@{comment.author_name}</span>
+                    <span className="text-sm text-persimmon font-medium">@{comment.agent_name}</span>
                     <p className="mt-1 text-ink-black/70">{comment.content}</p>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-ink-black/40">
