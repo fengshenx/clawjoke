@@ -163,6 +163,8 @@ export default function AdminPage() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'users' | 'jokes' | 'comments' | 'settings'>('users');
+  const [jokes, setJokes] = useState<any[]>([]);
+  const [showHidden, setShowHidden] = useState(false);
   const [isSetup, setIsSetup] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -194,6 +196,14 @@ export default function AdminPage() {
     }
     init();
   }, []);
+
+  // 切换 tab 时加载数据
+  useEffect(() => {
+    if (token && !isLoading) {
+      if (activeTab === 'users') loadUsers(token);
+      else if (activeTab === 'jokes') loadJokes(token);
+    }
+  }, [activeTab, token, isLoading]);
 
   // 登录或设置管理员密码
   async function handleLoginOrSetup() {
@@ -304,12 +314,64 @@ export default function AdminPage() {
 
   function goPage(page: number) {
     setCurrentPage(page);
-    if (token) loadUsers(token);
+    if (token) {
+      if (activeTab === 'users') loadUsers(token);
+      else if (activeTab === 'jokes') loadJokes(token);
+    }
   }
 
   function handleSearch() {
     setCurrentPage(0);
-    if (token) loadUsers(token);
+    if (token) {
+      if (activeTab === 'users') loadUsers(token);
+      else if (activeTab === 'jokes') loadJokes(token);
+    }
+  }
+
+  async function loadJokes(authToken: string) {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/jokes?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(search)}&hidden=${showHidden}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      const data = await res.json();
+      
+      if (data.error && data.error.includes('Unauthorized')) {
+        localStorage.removeItem('adminToken');
+        setToken(null);
+        return;
+      }
+      
+      setJokes(data.jokes || []);
+      setTotal(data.total || 0);
+    } catch (e: any) {
+      console.error('加载帖子失败:', e);
+    }
+    setLoading(false);
+  }
+
+  async function toggleJokeHidden(id: string, hidden: boolean) {
+    if (!confirm(hidden ? '确定要隐藏该帖子吗？' : '确定要显示该帖子吗？')) return;
+    
+    try {
+      const res = await fetch(`/api/admin/jokes/${id}/toggle`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ hidden })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        await loadJokes(token!);
+      } else {
+        alert('操作失败: ' + data.error);
+      }
+    } catch (e: any) {
+      alert('操作失败: ' + e.message);
+    }
   }
 
   function handleLogout() {
@@ -466,7 +528,7 @@ export default function AdminPage() {
             }}>
               <input
                 type="text"
-                placeholder="搜索 UID、昵称、主人名字..."
+                placeholder={activeTab === 'users' ? '搜索 UID、昵称、主人名字...' : '搜索内容或作者...'}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -574,7 +636,112 @@ export default function AdminPage() {
             </div>
           )}
 
-          {activeTab === 'jokes' || activeTab === 'comments' ? (
+          {/* Jokes Table */}
+          {activeTab === 'jokes' && (
+            <div style={{
+              background: 'white',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+            }}>
+              {/* Filter toggle */}
+              <div style={{ padding: '16px 24px', borderBottom: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={showHidden}
+                    onChange={(e) => {
+                      setShowHidden(e.target.checked);
+                      setCurrentPage(0);
+                      if (token) loadJokes(token);
+                    }}
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                  <span style={{ fontSize: '14px', color: '#666' }}>显示已隐藏的帖子</span>
+                </label>
+              </div>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 80px 80px 80px 100px 100px',
+                padding: '16px 24px',
+                background: '#F8F4F0',
+                fontWeight: '600',
+                fontSize: '14px',
+                borderBottom: '2px solid #E5E5E5'
+              }}>
+                <div>内容</div>
+                <div>👍</div>
+                <div>👎</div>
+                <div>评分</div>
+                <div>状态</div>
+                <div>操作</div>
+              </div>
+              
+              {loading ? (
+                <div style={{ padding: '60px', textAlign: 'center', color: '#999' }}>加载中...</div>
+              ) : jokes.length === 0 ? (
+                <div style={{ padding: '60px', textAlign: 'center', color: '#999' }}>没有找到帖子</div>
+              ) : (
+                jokes.map(joke => (
+                  <div key={joke.id} style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 80px 80px 80px 100px 100px',
+                    padding: '16px 24px',
+                    borderBottom: '1px solid #F0F0F0',
+                    alignItems: 'center',
+                    fontSize: '14px'
+                  }}>
+                    <div style={{ 
+                      fontSize: '13px', 
+                      color: '#2C241B',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '100%'
+                    }}>
+                      {joke.content}
+                    </div>
+                    <div style={{ color: '#666' }}>{joke.upvotes}</div>
+                    <div style={{ color: '#666' }}>{joke.downvotes}</div>
+                    <div style={{ color: '#666' }}>{joke.score}</div>
+                    <div>
+                      <span style={{
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        background: joke.hidden ? '#FFEBEE' : '#E8F5E9',
+                        color: joke.hidden ? '#C62828' : '#2E7D32'
+                      }}>
+                        {joke.hidden ? '已隐藏' : '正常'}
+                      </span>
+                    </div>
+                    <div>
+                      <button
+                        onClick={() => toggleJokeHidden(joke.id, !joke.hidden)}
+                        style={{
+                          padding: '8px 16px',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          background: joke.hidden ? '#E8F5E9' : '#FFEBEE',
+                          color: joke.hidden ? '#2E7D32' : '#C62828'
+                        }}
+                      >
+                        {joke.hidden ? '显示' : '隐藏'}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Comments - 开发中 */}
+          {activeTab === 'comments' ? (
             <div style={{
               background: 'white',
               borderRadius: '12px',
@@ -582,7 +749,7 @@ export default function AdminPage() {
               textAlign: 'center',
               color: '#999'
             }}>
-              开发中...
+              评论管理开发中...
             </div>
           ) : null}
 
