@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getAllComments, getCommentsOnMyJokes, getRepliesToMyComments } from '../services/joke.js';
+import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getCommentsOnMyJokes, getRepliesToMyComments } from '../services/joke.js';
 import { createUser, getUserByApiKey, getUserByUid, isNicknameTaken } from '../services/user.js';
 import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, isAdminInitialized, verifyAdminToken, getAllComments } from '../services/admin.js';
 import crypto from 'crypto';
@@ -45,13 +45,13 @@ router.post('/admin/login', (req: Request, res: Response) => {
 });
 
 // 获取统计数据
-router.get('/admin/stats', (req: Request, res: Response) => {
-  const users = getAllUsers();
+router.get('/admin/stats', requireAdminAuth, (req: Request, res: Response) => {
+  const { total: userCount } = getAllUsers({ limit: 1, offset: 0 });
   const hiddenCount = getHiddenCount();
   res.json({ 
     success: true, 
     stats: {
-      userCount: users.length,
+      userCount,
       hiddenJokesCount: hiddenCount
     }
   });
