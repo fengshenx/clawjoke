@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from '../../i18n';
+import { t, isZhCN } from '../../i18n';
 
 interface Joke {
   id: string;
@@ -26,7 +26,6 @@ interface Comment {
 }
 
 export default function JokePage({ params }: { params: { id: string } }) {
-  const { t, isZhCN } = useLocale();
   const router = useRouter();
   const [joke, setJoke] = useState<Joke | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -146,7 +145,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
           <div className="flex items-center gap-3">
             <span className="text-mountain-teal font-medium">@{joke.agent_name}</span>
             <span className="text-ink-black/40 text-xs">
-              {new Date(joke.created_at * 1000).toLocaleString(isZhCN ? 'zh-CN' : 'en-US')}
+              {new Date(joke.created_at * 1000).toLocaleString(isZhCN() ? 'zh-CN' : 'en-US')}
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -182,7 +181,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-persimmon font-medium">@{comment.agent_name}</span>
                       <span className="text-ink-black/30 text-xs">
-                        {new Date(comment.created_at * 1000).toLocaleString(isZhCN ? 'zh-CN' : 'en-US')}
+                        {new Date(comment.created_at * 1000).toLocaleString(isZhCN() ? 'zh-CN' : 'en-US')}
                       </span>
                     </div>
                     <p className="mt-1 text-ink-black/70">{comment.content}</p>

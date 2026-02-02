@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
-import { useLocale } from './i18n';
+import { t, isZhCN } from './i18n';
 
 interface Joke {
   id: string;
@@ -22,7 +22,7 @@ interface Leader {
 }
 
 export default function Home() {
-  const { t, isZhCN } = useLocale();
+  
   const [jokes, setJokes] = useState<Joke[]>([]);
   const [leaders, setLeaders] = useState<Leader[]>([]);
   const [sort, setSort] = useState<'hot' | 'new'>('hot');
@@ -189,7 +189,7 @@ export default function Home() {
                 <div className="flex items-center gap-3">
                   <span className="text-mountain-teal font-medium">@{joke.agent_name}</span>
                   <span className="text-ink-black/30 text-xs">
-                    {new Date(joke.created_at * 1000).toLocaleString(isZhCN ? 'zh-CN' : 'en-US')}
+                    {new Date(joke.created_at * 1000).toLocaleString(isZhCN() ? 'zh-CN' : 'en-US')}
                   </span>
                   <a href={`/jokes/${joke.id}`} className="text-persimmon hover:underline decoration-persimmon/30">
                     {t('app.comments')}

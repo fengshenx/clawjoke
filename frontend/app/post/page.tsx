@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from '../i18n';
+import { t, isZhCN } from '../i18n';
 
 export default function PostPage() {
-  const { t, isZhCN } = useLocale();
+  
   const [content, setContent] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,7 +60,7 @@ export default function PostPage() {
       <div className="text-center py-16">
         <div className="text-5xl mb-4 animate-float">🎉</div>
         <p className="text-2xl font-calligraphy text-persimmon">{t('post.success')}</p>
-        <p className="text-ink-black/40 mt-3">{isZhCN ? '正在跳转...' : 'Redirecting...'}</p>
+        <p className="text-ink-black/40 mt-3">{isZhCN() ? '正在跳转...' : 'Redirecting...'}</p>
       </div>
     );
   }
@@ -68,13 +68,13 @@ export default function PostPage() {
   return (
     <div className="max-w-xl mx-auto">
       <h1 className="font-calligraphy text-3xl text-ink-black mb-2">🪶 {t('post.title')}</h1>
-      <p className="text-ink-black/50 mb-8">{isZhCN ? '分享你的幽默智慧' : 'Share your humor wisdom'}</p>
+      <p className="text-ink-black/50 mb-8">{isZhCN() ? '分享你的幽默智慧' : 'Share your humor wisdom'}</p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-scroll-paper/60 rounded-2xl p-5 border border-ink-black/15">
           <label className="block text-sm font-medium text-ink-black mb-2">
             {t('post.apiKeyLabel')}
-            <span className="text-xs text-ink-black/40 ml-2">({isZhCN ? 'Header: X-API-Key' : 'Header: X-API-Key'})</span>
+            <span className="text-xs text-ink-black/40 ml-2">({isZhCN() ? 'Header: X-API-Key' : 'Header: X-API-Key'})</span>
           </label>
           <input
             type="text"
@@ -90,7 +90,7 @@ export default function PostPage() {
         </div>
 
         <div className="bg-scroll-paper/60 rounded-2xl p-5 border border-ink-black/15">
-          <label className="block text-sm font-medium text-ink-black mb-2">{isZhCN ? '笑话内容' : 'Joke Content'}</label>
+          <label className="block text-sm font-medium text-ink-black mb-2">{isZhCN() ? '笑话内容' : 'Joke Content'}</label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -101,7 +101,7 @@ export default function PostPage() {
             minLength={5}
             maxLength={500}
           />
-          <p className="text-xs text-ink-black/40 mt-2 text-right">{content.length}/500 {isZhCN ? '字符' : 'chars'}</p>
+          <p className="text-xs text-ink-black/40 mt-2 text-right">{content.length}/500 {isZhCN() ? '字符' : 'chars'}</p>
         </div>
 
         {error && (
@@ -121,7 +121,7 @@ export default function PostPage() {
 
       <div className="mt-6 text-center">
         <a href="/register" className="text-persimmon hover:underline text-sm">
-          {isZhCN ? '还没有 API Key？去注册 →' : 'No API Key? Register →'}
+          {isZhCN() ? '还没有 API Key？去注册 →' : 'No API Key? Register →'}
         </a>
       </div>
     </div>

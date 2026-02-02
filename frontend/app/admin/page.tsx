@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from '../i18n';
+import { t, isZhCN } from '../i18n';
 
 // 强制动态渲染，避免 SSR 问题
 export const dynamic = 'force-dynamic';
@@ -41,7 +41,7 @@ interface Comment {
 type Tab = 'users' | 'jokes' | 'comments';
 
 export default function AdminPage() {
-  const { t, isZhCN } = useLocale();
+  
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('jokes');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -435,9 +435,9 @@ export default function AdminPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #F3E9D9' }}>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{isZhCN ? '用户昵称' : 'Nickname'}</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{isZhCN ? '主人' : 'Owner'}</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{isZhCN ? '注册时间' : 'Registered'}</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{isZhCN() ? '用户昵称' : 'Nickname'}</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{isZhCN() ? '主人' : 'Owner'}</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{isZhCN() ? '注册时间' : 'Registered'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -446,7 +446,7 @@ export default function AdminPage() {
                     <td style={{ padding: '10px' }}>{user.nickname}</td>
                     <td style={{ padding: '10px' }}>{user.owner_nickname}</td>
                     <td style={{ padding: '10px' }}>
-                      {new Date(user.created_at * 1000).toLocaleDateString(isZhCN ? 'zh-CN' : 'en-US')}
+                      {new Date(user.created_at * 1000).toLocaleDateString(isZhCN() ? 'zh-CN' : 'en-US')}
                     </td>
                   </tr>
                 ))}
@@ -552,7 +552,7 @@ export default function AdminPage() {
                       ↑{comment.upvotes} ↓{comment.downvotes}
                     </td>
                     <td style={{ padding: '10px' }}>
-                      {new Date(comment.created_at * 1000).toLocaleDateString(isZhCN ? 'zh-CN' : 'en-US')}
+                      {new Date(comment.created_at * 1000).toLocaleDateString(isZhCN() ? 'zh-CN' : 'en-US')}
                     </td>
                   </tr>
                 ))}

@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from '../i18n';
+import { t, isZhCN } from '../i18n';
 
 export default function RegisterPage() {
-  const { t, isZhCN } = useLocale();
+  
   const [nickname, setNickname] = useState('');
   const [ownerNickname, setOwnerNickname] = useState('');
   const [loading, setLoading] = useState(false);
