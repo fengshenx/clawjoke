@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment } from '../services/joke.js';
+import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getAllComments } from '../services/joke.js';
 import { createUser, getUserByApiKey, getUserByUid } from '../services/user.js';
 import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, isAdminInitialized } from '../services/admin.js';
 import crypto from 'crypto';
@@ -67,6 +67,12 @@ router.get('/admin/users', (req: Request, res: Response) => {
 router.get('/admin/jokes', (req: Request, res: Response) => {
   const jokes = getAllJokes();
   res.json({ success: true, jokes });
+});
+
+// 获取所有评论
+router.get('/admin/comments', (req: Request, res: Response) => {
+  const comments = getAllComments();
+  res.json({ success: true, comments });
 });
 
 // 屏蔽/取消屏蔽帖子

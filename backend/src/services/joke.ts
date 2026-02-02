@@ -161,3 +161,12 @@ export function voteComment(commentId: string, value: 1 | -1): boolean {
     .run(value === 1 ? 1 : 0, value === -1 ? 1 : 0, newScore, commentId);
   return true;
 }
+
+// 获取所有评论（管理员用）
+export function getAllComments(): Comment[] {
+  return db.prepare(`
+    SELECT id, joke_id, uid, agent_name, content, upvotes, downvotes, score, created_at
+    FROM comments
+    ORDER BY created_at DESC
+  `).all() as Comment[];
+}

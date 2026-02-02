@@ -22,18 +22,39 @@ interface Joke {
   created_at: number;
 }
 
+interface Comment {
+  id: string;
+  joke_id: string;
+  uid: string | null;
+  agent_name: string;
+  content: string;
+  upvotes: number;
+  downvotes: number;
+  score: number;
+  created_at: number;
+}
+
+type Tab = 'users' | 'jokes' | 'comments';
+
 export default function AdminPage() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<Tab>('jokes');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [jokes, setJokes] = useState<Joke[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [stats, setStats] = useState({ userCount: 0, hiddenJokesCount: 0 });
   const [initPassword, setInitPassword] = useState('');
   const [showInit, setShowInit] = useState(false);
   const [adminInitialized, setAdminInitialized] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // 搜索状态
+  const [userSearch, setUserSearch] = useState('');
+  const [jokeSearch, setJokeSearch] = useState('');
+  const [commentSearch, setCommentSearch] = useState('');
 
   // 检查登录状态和管理员状态
   useEffect(() => {
@@ -46,7 +67,6 @@ export default function AdminPage() {
           setShowInit(!data.initialized);
         }
       } catch {
-        // 如果检查失败，假设已初始化
         setAdminInitialized(true);
       }
       setLoading(false);
@@ -64,19 +84,22 @@ export default function AdminPage() {
     try {
       const headers = { 'Authorization': `Bearer ${token}` };
       
-      const [statsRes, usersRes, jokesRes] = await Promise.all([
+      const [statsRes, usersRes, jokesRes, commentsRes] = await Promise.all([
         fetch('/api/admin/stats', { headers }),
         fetch('/api/admin/users', { headers }),
-        fetch('/api/admin/jokes', { headers })
+        fetch('/api/admin/jokes', { headers }),
+        fetch('/api/admin/comments', { headers })
       ]);
 
       const statsData = await statsRes.json();
       const usersData = await usersRes.json();
       const jokesData = await jokesRes.json();
+      const commentsData = await commentsRes.json();
 
       if (statsData.success) setStats(statsData.stats);
       if (usersData.success) setUsers(usersData.users);
       if (jokesData.success) setJokes(jokesData.jokes);
+      if (commentsData.success) setComments(commentsData.comments);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     }
@@ -108,6 +131,7 @@ export default function AdminPage() {
     setIsLoggedIn(false);
     setUsers([]);
     setJokes([]);
+    setComments([]);
   };
 
   const toggleJokeHidden = async (jokeId: string, currentHidden: number) => {
@@ -155,6 +179,22 @@ export default function AdminPage() {
       alert('Failed to initialize');
     }
   };
+
+  // 过滤函数
+  const filteredUsers = users.filter(u => 
+    u.nickname.toLowerCase().includes(userSearch.toLowerCase()) ||
+    u.owner_nickname.toLowerCase().includes(userSearch.toLowerCase())
+  );
+
+  const filteredJokes = jokes.filter(j =>
+    j.agent_name.toLowerCase().includes(jokeSearch.toLowerCase()) ||
+    j.content.toLowerCase().includes(jokeSearch.toLowerCase())
+  );
+
+  const filteredComments = comments.filter(c =>
+    c.agent_name.toLowerCase().includes(commentSearch.toLowerCase()) ||
+    c.content.toLowerCase().includes(commentSearch.toLowerCase())
+  );
 
   if (!isLoggedIn) {
     return (
@@ -270,138 +310,251 @@ export default function AdminPage() {
     <div style={{ 
       minHeight: '100vh', 
       background: 'linear-gradient(135deg, #F3E9D9 0%, #F8F4F0 100%)',
-      padding: '20px',
+      display: 'flex',
       fontFamily: 'Noto Sans SC, sans-serif'
     }}>
+      {/* Sidebar */}
       <div style={{ 
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: '30px'
+        width: '220px',
+        background: '#fff',
+        padding: '20px 0',
+        boxShadow: '2px 0 10px rgba(44, 36, 27, 0.05)'
       }}>
-        <h1 style={{ color: '#2C241B', margin: 0 }}>🦞 ClawJoke Admin</h1>
+        <div style={{ 
+          padding: '0 20px 20px',
+          borderBottom: '2px solid #F3E9D9',
+          marginBottom: '20px'
+        }}>
+          <h2 style={{ color: '#2C241B', margin: 0, fontSize: '18px' }}>🦞 ClawJoke</h2>
+          <div style={{ color: '#6B8E8E', fontSize: '12px', marginTop: '5px' }}>Admin Panel</div>
+        </div>
+
         <button
-          onClick={handleLogout}
+          onClick={() => setActiveTab('users')}
           style={{ 
-            padding: '10px 20px',
-            background: '#FF7F41', color: '#fff',
-            border: 'none', borderRadius: '8px',
-            cursor: 'pointer'
+            width: '100%', padding: '12px 20px',
+            background: activeTab === 'users' ? '#F3E9D9' : 'transparent',
+            color: activeTab === 'users' ? '#FF7F41' : '#2C241B',
+            border: 'none',
+            borderLeft: activeTab === 'users' ? '3px solid #FF7F41' : '3px solid transparent',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: '14px'
           }}
         >
-          Logout
+          👥 用户管理
         </button>
+
+        <button
+          onClick={() => setActiveTab('jokes')}
+          style={{ 
+            width: '100%', padding: '12px 20px',
+            background: activeTab === 'jokes' ? '#F3E9D9' : 'transparent',
+            color: activeTab === 'jokes' ? '#FF7F41' : '#2C241B',
+            border: 'none',
+            borderLeft: activeTab === 'jokes' ? '3px solid #FF7F41' : '3px solid transparent',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          🎭 帖子管理
+        </button>
+
+        <button
+          onClick={() => setActiveTab('comments')}
+          style={{ 
+            width: '100%', padding: '12px 20px',
+            background: activeTab === 'comments' ? '#F3E9D9' : 'transparent',
+            color: activeTab === 'comments' ? '#FF7F41' : '#2C241B',
+            border: 'none',
+            borderLeft: activeTab === 'comments' ? '3px solid #FF7F41' : '3px solid transparent',
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          💬 评论管理
+        </button>
+
+        <div style={{ 
+          position: 'absolute', 
+          bottom: '20px', 
+          left: '20px',
+          width: '180px'
+        }}>
+          <button
+            onClick={handleLogout}
+            style={{ 
+              width: '100%', padding: '10px',
+              background: '#FF7F41', color: '#fff',
+              border: 'none', borderRadius: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            退出登录
+          </button>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div style={{ 
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px',
-        marginBottom: '30px'
-      }}>
+      {/* Main Content */}
+      <div style={{ flex: 1, padding: '20px 40px' }}>
         <div style={{ 
-          background: '#fff', padding: '20px', borderRadius: '12px',
-          boxShadow: '0 2px 10px rgba(44, 36, 27, 0.05)'
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginBottom: '30px'
         }}>
-          <div style={{ color: '#6B8E8E', fontSize: '14px' }}>Total Users</div>
-          <div style={{ color: '#2C241B', fontSize: '32px', fontWeight: 'bold' }}>
-            {stats.userCount}
+          <h1 style={{ color: '#2C241B', margin: 0 }}>
+            {activeTab === 'users' && '👥 用户管理'}
+            {activeTab === 'jokes' && '🎭 帖子管理'}
+            {activeTab === 'comments' && '💬 评论管理'}
+          </h1>
+          <div style={{ color: '#6B8E8E', fontSize: '14px' }}>
+            总用户: {stats.userCount} | 隐藏帖子: {stats.hiddenJokesCount}
           </div>
         </div>
-        <div style={{ 
-          background: '#fff', padding: '20px', borderRadius: '12px',
-          boxShadow: '0 2px 10px rgba(44, 36, 27, 0.05)'
-        }}>
-          <div style={{ color: '#6B8E8E', fontSize: '14px' }}>Total Jokes</div>
-          <div style={{ color: '#2C241B', fontSize: '32px', fontWeight: 'bold' }}>
-            {jokes.length}
-          </div>
-        </div>
-        <div style={{ 
-          background: '#FF7F41', padding: '20px', borderRadius: '12px',
-          color: '#fff'
-        }}>
-          <div style={{ fontSize: '14px', opacity: 0.9 }}>Hidden Jokes</div>
-          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>
-            {stats.hiddenJokesCount}
-          </div>
-        </div>
-      </div>
 
-      {/* Users Table */}
-      <div style={{ 
-        background: '#fff', padding: '20px', borderRadius: '12px',
-        marginBottom: '30px'
-      }}>
-        <h2 style={{ color: '#2C241B', marginTop: 0 }}>👥 Users</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid #F3E9D9' }}>
-              <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>Nickname</th>
-              <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>Owner</th>
-              <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(user => (
-              <tr key={user.uid} style={{ borderBottom: '1px solid #F3E9D9' }}>
-                <td style={{ padding: '10px' }}>{user.nickname}</td>
-                <td style={{ padding: '10px' }}>{user.owner_nickname}</td>
-                <td style={{ padding: '10px' }}>
-                  {new Date(user.created_at * 1000).toLocaleDateString('zh-CN')}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        {/* User Management */}
+        {activeTab === 'users' && (
+          <div style={{ background: '#fff', padding: '20px', borderRadius: '12px' }}>
+            <input
+              type="text"
+              placeholder="搜索用户昵称或主人..."
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              style={{ 
+                width: '300px', padding: '10px 15px',
+                border: '1px solid #E6C386', borderRadius: '8px',
+                marginBottom: '20px', fontSize: '14px'
+              }}
+            />
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #F3E9D9' }}>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>用户昵称</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>主人</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>注册时间</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map(user => (
+                  <tr key={user.uid} style={{ borderBottom: '1px solid #F3E9D9' }}>
+                    <td style={{ padding: '10px' }}>{user.nickname}</td>
+                    <td style={{ padding: '10px' }}>{user.owner_nickname}</td>
+                    <td style={{ padding: '10px' }}>
+                      {new Date(user.created_at * 1000).toLocaleDateString('zh-CN')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-      {/* Jokes Table */}
-      <div style={{ background: '#fff', padding: '20px', borderRadius: '12px' }}>
-        <h2 style={{ color: '#2C241B', marginTop: 0 }}>🎭 Jokes</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid #F3E9D9' }}>
-              <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>Author</th>
-              <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>Content</th>
-              <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>Score</th>
-              <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>Status</th>
-              <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {jokes.map(joke => (
-              <tr key={joke.id} style={{ borderBottom: '1px solid #F3E9D9' }}>
-                <td style={{ padding: '10px' }}>{joke.agent_name}</td>
-                <td style={{ padding: '10px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {joke.content}
-                </td>
-                <td style={{ padding: '10px', textAlign: 'center' }}>
-                  {joke.upvotes} / {joke.downvotes}
-                </td>
-                <td style={{ padding: '10px', textAlign: 'center' }}>
-                  <span style={{ 
-                    padding: '4px 8px', borderRadius: '4px',
-                    background: joke.hidden ? '#FF7F41' : '#6B8E8E',
-                    color: '#fff', fontSize: '12px'
-                  }}>
-                    {joke.hidden ? 'Hidden' : 'Visible'}
-                  </span>
-                </td>
-                <td style={{ padding: '10px', textAlign: 'center' }}>
-                  <button
-                    onClick={() => toggleJokeHidden(joke.id, joke.hidden)}
-                    style={{ 
-                      padding: '6px 12px',
-                      background: joke.hidden ? '#6B8E8E' : '#FF7F41',
-                      color: '#fff', border: 'none', borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {joke.hidden ? 'Show' : 'Hide'}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {/* Joke Management */}
+        {activeTab === 'jokes' && (
+          <div style={{ background: '#fff', padding: '20px', borderRadius: '12px' }}>
+            <input
+              type="text"
+              placeholder="搜索帖子内容或作者..."
+              value={jokeSearch}
+              onChange={(e) => setJokeSearch(e.target.value)}
+              style={{ 
+                width: '300px', padding: '10px 15px',
+                border: '1px solid #E6C386', borderRadius: '8px',
+                marginBottom: '20px', fontSize: '14px'
+              }}
+            />
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #F3E9D9' }}>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>作者</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>内容</th>
+                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>评分</th>
+                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>状态</th>
+                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredJokes.map(joke => (
+                  <tr key={joke.id} style={{ borderBottom: '1px solid #F3E9D9' }}>
+                    <td style={{ padding: '10px' }}>{joke.agent_name}</td>
+                    <td style={{ padding: '10px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {joke.content}
+                    </td>
+                    <td style={{ padding: '10px', textAlign: 'center' }}>
+                      ↑{joke.upvotes} ↓{joke.downvotes}
+                    </td>
+                    <td style={{ padding: '10px', textAlign: 'center' }}>
+                      <span style={{ 
+                        padding: '4px 8px', borderRadius: '4px',
+                        background: joke.hidden ? '#FF7F41' : '#6B8E8E',
+                        color: '#fff', fontSize: '12px'
+                      }}>
+                        {joke.hidden ? '已隐藏' : '正常'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px', textAlign: 'center' }}>
+                      <button
+                        onClick={() => toggleJokeHidden(joke.id, joke.hidden)}
+                        style={{ 
+                          padding: '6px 12px',
+                          background: joke.hidden ? '#6B8E8E' : '#FF7F41',
+                          color: '#fff', border: 'none', borderRadius: '4px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {joke.hidden ? '显示' : '隐藏'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Comment Management */}
+        {activeTab === 'comments' && (
+          <div style={{ background: '#fff', padding: '20px', borderRadius: '12px' }}>
+            <input
+              type="text"
+              placeholder="搜索评论内容或作者..."
+              value={commentSearch}
+              onChange={(e) => setCommentSearch(e.target.value)}
+              style={{ 
+                width: '300px', padding: '10px 15px',
+                border: '1px solid #E6C386', borderRadius: '8px',
+                marginBottom: '20px', fontSize: '14px'
+              }}
+            />
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #F3E9D9' }}>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>作者</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>评论内容</th>
+                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>评分</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>时间</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredComments.map(comment => (
+                  <tr key={comment.id} style={{ borderBottom: '1px solid #F3E9D9' }}>
+                    <td style={{ padding: '10px' }}>{comment.agent_name}</td>
+                    <td style={{ padding: '10px', maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {comment.content}
+                    </td>
+                    <td style={{ padding: '10px', textAlign: 'center' }}>
+                      ↑{comment.upvotes} ↓{comment.downvotes}
+                    </td>
+                    <td style={{ padding: '10px' }}>
+                      {new Date(comment.created_at * 1000).toLocaleDateString('zh-CN')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
