@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { LocaleProvider } from '../i18n';
 
 export default function AdminPage() {
+  // 所有 hooks 必须放在最顶层
   const [token, setToken] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [users, setUsers] = useState<any[]>([]);
@@ -13,6 +14,8 @@ export default function AdminPage() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'users' | 'jokes' | 'comments'>('users');
+  const [isSetup, setIsSetup] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // 检查是否已设置管理员
   async function checkSetup(): Promise<boolean> {
@@ -25,22 +28,22 @@ export default function AdminPage() {
     }
   }
 
+  // 初始化
   useEffect(() => {
-    // Check for token in localStorage
-    const savedToken = localStorage.getItem('adminToken');
-    const savedSetup = localStorage.getItem('adminSetupDone');
-    
-    // Check if admin is setup
-    checkSetup().then(isSetup => {
+    async function init() {
+      const savedToken = localStorage.getItem('adminToken');
+      const savedSetup = localStorage.getItem('adminSetupDone');
+      
+      const setup = await checkSetup();
+      setIsSetup(setup);
+      
       if (savedToken && savedSetup === 'true') {
         setToken(savedToken);
-        loadUsers(savedToken);
-      } else {
-        // Clear stale data
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminSetupDone');
+        await loadUsers(savedToken);
       }
-    });
+      setIsLoading(false);
+    }
+    init();
   }, []);
 
   // 登录或设置管理员密码
@@ -49,21 +52,17 @@ export default function AdminPage() {
     setLoading(true);
     
     try {
-      // 先检查是否需要设置
-      const setupRes = await fetch('/api/admin/status');
-      const setupData = await setupRes.json();
-      
       let res, data;
       
-      if (setupData.isSetup) {
-        // 已设置，执行登录
+      if (isSetup) {
+        // 登录
         res = await fetch('/api/admin/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: 'admin', password })
         });
       } else {
-        // 未设置，执行设置
+        // 设置
         res = await fetch('/api/admin/setup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -74,16 +73,16 @@ export default function AdminPage() {
       data = await res.json();
       
       if (data.success) {
-        if (setupData.isSetup) {
+        if (isSetup) {
           // 登录成功
           setToken(data.token);
           localStorage.setItem('adminToken', data.token);
           localStorage.setItem('adminSetupDone', 'true');
-          loadUsers(data.token);
+          await loadUsers(data.token);
         } else {
-          // 设置成功，转为登录
+          // 设置成功，自动登录
           localStorage.setItem('adminSetupDone', 'true');
-          // 自动登录
+          setIsSetup(true);
           const loginRes = await fetch('/api/admin/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -93,7 +92,7 @@ export default function AdminPage() {
           if (loginData.success) {
             setToken(loginData.token);
             localStorage.setItem('adminToken', loginData.token);
-            loadUsers(loginData.token);
+            await loadUsers(loginData.token);
           } else {
             alert('设置成功但登录失败，请重新登录');
             setPassword('');
@@ -145,7 +144,7 @@ export default function AdminPage() {
       const data = await res.json();
       
       if (data.success) {
-        loadUsers(token!);
+        await loadUsers(token!);
       } else {
         alert('操作失败: ' + data.error);
       }
@@ -164,19 +163,30 @@ export default function AdminPage() {
     if (token) loadUsers(token);
   }
 
-  // 登录表单
+  function handleLogout() {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminSetupDone');
+    setToken(null);
+    setPassword('');
+  }
+
+  // 加载中
+  if (isLoading) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: '#F3E9D9'
+      }}>
+        <div style={{ color: '#666' }}>加载中...</div>
+      </div>
+    );
+  }
+
+  // 登录/设置密码表单
   if (!token) {
-    // 检查是否需要设置管理员
-    const [isSetup, setIsSetup] = useState<boolean | null>(null);
-    
-    useEffect(() => {
-      checkSetup().then(setIsSetup);
-    }, []);
-    
-    if (isSetup === null) {
-      return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F3E9D9' }}>加载中...</div>;
-    }
-    
     return (
       <LocaleProvider>
         <div style={{ 
@@ -257,10 +267,7 @@ export default function AdminPage() {
             <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>管理后台</div>
           </div>
           <button
-            onClick={() => {
-              localStorage.removeItem('adminToken');
-              setToken(null);
-            }}
+            onClick={handleLogout}
             style={{
               padding: '8px 16px',
               background: 'rgba(255,255,255,0.2)',
