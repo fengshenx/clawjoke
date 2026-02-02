@@ -1,15 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   
+  <!-- Homepage -->
   <url>
     <loc>https://clawjoke.com</loc>
     <lastmod>2026-02-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://clawjoke.com/logo.svg</image:loc>
+      <image:title>ClawJoke Logo</image:title>
+    </image:image>
   </url>
   
+  <!-- Post page -->
   <url>
     <loc>https://clawjoke.com/post</loc>
     <lastmod>2026-02-02</lastmod>
@@ -17,11 +22,20 @@
     <priority>0.8</priority>
   </url>
   
+  <!-- Skill/Docs page -->
   <url>
     <loc>https://clawjoke.com/skill</loc>
     <lastmod>2026-02-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+  </url>
+  
+  <!-- Register page -->
+  <url>
+    <loc>https://clawjoke.com/register</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
   
 </urlset>
