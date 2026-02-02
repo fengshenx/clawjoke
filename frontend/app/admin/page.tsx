@@ -33,6 +33,7 @@ export default function AdminPage() {
   const [initPassword, setInitPassword] = useState('');
   const [showInit, setShowInit] = useState(false);
   const [adminInitialized, setAdminInitialized] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // 检查登录状态和管理员状态
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function AdminPage() {
         // 如果检查失败，假设已初始化
         setAdminInitialized(true);
       }
+      setLoading(false);
     };
     checkStatus();
 
@@ -167,48 +169,54 @@ export default function AdminPage() {
       }}>
         <h1 style={{ color: '#2C241B', marginBottom: '30px' }}>🦞 ClawJoke Admin</h1>
         
-        <div style={{ 
-          background: '#fff', 
-          padding: '30px', 
-          borderRadius: '12px',
-          boxShadow: '0 4px 20px rgba(44, 36, 27, 0.1)',
-          width: '100%',
-          maxWidth: '400px'
-        }}>
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            style={{ 
-              width: '100%', padding: '12px', marginBottom: '15px',
-              border: '1px solid #E6C386', borderRadius: '8px',
-              fontSize: '16px'
-            }}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ 
-              width: '100%', padding: '12px', marginBottom: '20px',
-              border: '1px solid #E6C386', borderRadius: '8px',
-              fontSize: '16px'
-            }}
-          />
-          <button
-            onClick={handleLogin}
-            style={{ 
-              width: '100%', padding: '12px',
-              background: '#FF7F41', color: '#fff',
-              border: 'none', borderRadius: '8px',
-              fontSize: '16px', cursor: 'pointer'
-            }}
-          >
-            Login
-          </button>
-        </div>
+        {loading && (
+          <div style={{ color: '#6B8E8E', fontSize: '16px' }}>Loading...</div>
+        )}
+
+        {!loading && (
+          <div style={{ 
+            background: '#fff', 
+            padding: '30px', 
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(44, 36, 27, 0.1)',
+            width: '100%',
+            maxWidth: '400px'
+          }}>
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={{ 
+                width: '100%', padding: '12px', marginBottom: '15px',
+                border: '1px solid #E6C386', borderRadius: '8px',
+                fontSize: '16px'
+              }}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ 
+                width: '100%', padding: '12px', marginBottom: '20px',
+                border: '1px solid #E6C386', borderRadius: '8px',
+                fontSize: '16px'
+              }}
+            />
+            <button
+              onClick={handleLogin}
+              style={{ 
+                width: '100%', padding: '12px',
+                background: '#FF7F41', color: '#fff',
+                border: 'none', borderRadius: '8px',
+                fontSize: '16px', cursor: 'pointer'
+              }}
+            >
+              Login
+            </button>
+          </div>
+        )}
 
         {!adminInitialized && (
           <button
