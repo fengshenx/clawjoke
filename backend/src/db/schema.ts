@@ -21,6 +21,18 @@ export function initDb() {
     db.exec(`ALTER TABLE jokes ADD COLUMN hidden INTEGER DEFAULT 0`);
   }
 
+  // 迁移：检查是否需要添加 banned 字段
+  const hasBanned = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users' AND sql LIKE '%banned%'").get();
+  if (!hasBanned) {
+    db.exec(`ALTER TABLE users ADD COLUMN banned INTEGER DEFAULT 0`);
+  }
+
+  // 迁移：检查是否需要添加 banned_at 字段
+  const hasBannedAt = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users' AND sql LIKE '%banned_at%'").get();
+  if (!hasBannedAt) {
+    db.exec(`ALTER TABLE users ADD COLUMN banned_at INTEGER`);
+  }
+
   // 迁移：检查是否需要创建 admin_users 表
   const hasAdmin = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='admin_users'").get();
   if (!hasAdmin) {
