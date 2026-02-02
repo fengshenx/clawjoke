@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from '../i18n';
 
+// 强制动态渲染，避免 SSR 问题
+export const dynamic = 'force-dynamic';
+
 interface User {
   uid: string;
   nickname: string;
