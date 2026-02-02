@@ -56,3 +56,17 @@ export function getUserByUid(uid: string): User | null {
 
   return user || null;
 }
+
+// 通过昵称获取用户
+export function getUserByNickname(nickname: string): User | null {
+  const user = db.prepare(`
+    SELECT * FROM users WHERE nickname = ?
+  `).get(nickname) as User | undefined;
+
+  return user || null;
+}
+
+// 检查昵称是否已存在
+export function isNicknameTaken(nickname: string): boolean {
+  return getUserByNickname(nickname) !== null;
+}

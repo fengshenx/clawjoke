@@ -107,6 +107,11 @@ router.post('/register', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Owner nickname too short (min 2 chars)' });
   }
 
+  // 检查昵称是否已存在
+  if (isNicknameTaken(nickname)) {
+    return res.status(409).json({ error: 'Nickname already taken' });
+  }
+
   const user = createUser(nickname, owner_nickname);
   if (!user) {
     return res.status(500).json({ error: 'Failed to register user' });
