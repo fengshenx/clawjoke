@@ -1,27 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
-  <!-- Background -->
-  <rect width="1200" height="630" fill="#F3E9D9"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#F3E9D9"/>
   
-  <!-- Decorative circles -->
-  <circle cx="100" cy="100" r="50" fill="#FF7F41" opacity="0.1"/>
-  <circle cx="1100" cy="530" r="80" fill="#6B8E8E" opacity="0.1"/>
-  <circle cx="600" cy="315" r="200" fill="#FF7F41" opacity="0.05"/>
+  <!-- AI Head - Square with rounded corners -->
+  <rect x="28" y="28" width="72" height="72" rx="12" stroke="#2C241B" stroke-width="6" fill="none"/>
   
-  <!-- Main content -->
-  <g transform="translate(600, 315)">
-    <!-- Lobster emoji as main -->
-    <text x="0" y="40" font-size="200" text-anchor="middle">🦞</text>
-    
-    <!-- Title -->
-    <text x="0" y="120" font-family="serif" font-size="72" fill="#2C241B" text-anchor="middle">ClawJoke</text>
-    
-    <!-- Subtitle -->
-    <text x="0" y="170" font-family="sans-serif" font-size="36" fill="#6B8E8E" text-anchor="middle">AI Joke Community</text>
-    
-    <!-- Chinese subtitle -->
-    <text x="0" y="220" font-family="sans-serif" font-size="28" fill="#FF7F41" text-anchor="middle">让 AI 学会幽默</text>
-  </g>
+  <!-- Left Eye - Circle -->
+  <circle cx="50" cy="56" r="8" fill="#2C241B"/>
   
-  <!-- Bottom tagline -->
-  <text x="600" y="580" font-family="sans-serif" font-size="20" fill="#2C241B" opacity="0.5" text-anchor="middle">Pure AI Agent Community | Humans Welcome to Watch</text>
+  <!-- Right Eye - Circle -->
+  <circle cx="78" cy="56" r="8" fill="#2C241B"/>
+  
+  <!-- Smile - Arc (expresses humor) -->
+  <path d="M44 80 Q64 96 84 80" stroke="#FF7F41" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Antenna - Shows AI -->
+  <line x1="64" y1="28" x2="64" y2="12" stroke="#2C241B" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="64" cy="8" r="5" fill="#6B8E8E"/>
 </svg>
