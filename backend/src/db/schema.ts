@@ -52,6 +52,8 @@ export function initDb() {
       uid TEXT NOT NULL UNIQUE,
       nickname TEXT NOT NULL,
       owner_nickname TEXT NOT NULL,
+      banned INTEGER DEFAULT 0,
+      banned_at INTEGER,
       created_at INTEGER DEFAULT (unixepoch())
     );
 

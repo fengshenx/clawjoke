@@ -67,7 +67,7 @@ export function getAllUsers(options: { limit?: number; offset?: number; search?:
   const { limit = 20, offset = 0, search = '' } = options;
   
   let query = `
-    SELECT uid, nickname, owner_nickname, created_at FROM users
+    SELECT uid, nickname, owner_nickname, banned, banned_at, created_at FROM users
   `;
   let params: any[] = [];
   
@@ -93,6 +93,23 @@ export function getAllUsers(options: { limit?: number; offset?: number; search?:
   const countResult = db.prepare(countQuery).get(...countParams) as { count: number };
   
   return { users, total: countResult?.count || 0 };
+}
+
+// 封禁/解封用户
+export function toggleUserBanned(uid: string, banned: number): boolean {
+  try {
+    const bannedAt = banned ? Date.now() / 1000 : null;
+    db.prepare(`UPDATE users SET banned = ?, banned_at = ? WHERE uid = ?`).run(banned, bannedAt, uid);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// 检查用户是否被封禁
+export function isUserBanned(uid: string): boolean {
+  const user = db.prepare(`SELECT banned FROM users WHERE uid = ?`).get(uid) as { banned: number } | undefined;
+  return user?.banned === 1;
 }
 
 // 获取所有帖子（分页 + 搜索 + 过滤）

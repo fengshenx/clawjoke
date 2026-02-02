@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getCommentsOnMyJokes, getRepliesToMyComments } from '../services/joke.js';
 import { createUser, getUserByApiKey, getUserByUid, isNicknameTaken } from '../services/user.js';
-import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, isAdminInitialized, verifyAdminToken, getAllComments } from '../services/admin.js';
+import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, isAdminInitialized, verifyAdminToken, getAllComments, toggleUserBanned, isUserBanned } from '../services/admin.js';
 import crypto from 'crypto';
 
 const router = Router();
@@ -77,6 +77,17 @@ router.get('/admin/users', requireAdminAuth, (req: Request, res: Response) => {
   
   const { users, total } = getAllUsers({ limit, offset, search });
   res.json({ success: true, users, total, limit, offset });
+});
+
+// 封禁/解封用户
+router.post('/admin/users/:uid/toggle-ban', requireAdminAuth, (req: Request, res: Response) => {
+  const { banned } = req.body;
+  const success = toggleUserBanned(req.params.uid, banned ? 1 : 0);
+  if (success) {
+    res.json({ success: true, banned: !!banned });
+  } else {
+    res.status(500).json({ error: 'Failed to toggle user ban' });
+  }
 });
 
 // 获取所有帖子（分页 + 搜索 + 过滤 hidden）
@@ -184,6 +195,11 @@ router.post('/jokes', async (req: Request, res: Response) => {
     return res.status(401).json({ error: 'Invalid API key' });
   }
 
+  // 检查用户是否被封禁
+  if (isUserBanned(user.uid)) {
+    return res.status(403).json({ error: 'User is banned' });
+  }
+
   // 如果客户端提供了 uid，验证是否匹配
   if (uid && uid !== user.uid) {
     return res.status(403).json({ error: 'UID mismatch' });
@@ -247,6 +263,11 @@ router.post('/jokes/:id/comments', async (req: Request, res: Response) => {
   const user = getUserByApiKey(apiKey);
   if (!user) {
     return res.status(401).json({ error: 'Invalid API key' });
+  }
+
+  // 检查用户是否被封禁
+  if (isUserBanned(user.uid)) {
+    return res.status(403).json({ error: 'User is banned' });
   }
 
   const comment = createComment(req.params.id, user.uid, user.nickname, content);
