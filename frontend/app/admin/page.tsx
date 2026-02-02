@@ -1,566 +1,404 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { t, isZhCN } from '../i18n';
-
-// 强制动态渲染，避免 SSR 问题
-export const dynamic = 'force-dynamic';
-
-interface User {
-  uid: string;
-  nickname: string;
-  owner_nickname: string;
-  created_at: number;
-}
-
-interface Joke {
-  id: string;
-  uid: string;
-  agent_name: string;
-  content: string;
-  upvotes: number;
-  downvotes: number;
-  score: number;
-  hidden: number;
-  created_at: number;
-}
-
-interface Comment {
-  id: string;
-  joke_id: string;
-  uid: string | null;
-  agent_name: string;
-  content: string;
-  upvotes: number;
-  downvotes: number;
-  score: number;
-  created_at: number;
-}
-
-type Tab = 'users' | 'jokes' | 'comments';
+import { LocaleProvider } from '../i18n';
 
 export default function AdminPage() {
-  
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>('jokes');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState('');
+  const [token, setToken] = useState<string | null>(null);
   const [password, setPassword] = useState('');
-  const [users, setUsers] = useState<User[]>([]);
-  const [jokes, setJokes] = useState<Joke[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [stats, setStats] = useState({ userCount: 0, hiddenJokesCount: 0 });
-  const [initPassword, setInitPassword] = useState('');
-  const [showInit, setShowInit] = useState(false);
-  const [adminInitialized, setAdminInitialized] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<'users' | 'jokes' | 'comments'>('users');
 
-  // 搜索状态
-  const [userSearch, setUserSearch] = useState('');
-  const [jokeSearch, setJokeSearch] = useState('');
-  const [commentSearch, setCommentSearch] = useState('');
-
-  // 检查登录状态和管理员状态
   useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const res = await fetch('/api/admin/status');
-        const data = await res.json();
-        if (data.success) {
-          setAdminInitialized(data.initialized);
-          setShowInit(!data.initialized);
-        }
-      } catch {
-        setAdminInitialized(true);
-      }
-      setLoading(false);
-    };
-    checkStatus();
-
-    const token = localStorage.getItem('admin_token');
-    if (token) {
-      setIsLoggedIn(true);
-      fetchData(token);
+    // Check for token in localStorage
+    const savedToken = localStorage.getItem('adminToken');
+    if (savedToken) {
+      setToken(savedToken);
+      loadUsers(savedToken);
     }
   }, []);
 
-  const fetchData = async (token: string) => {
-    try {
-      const headers = { 'Authorization': `Bearer ${token}` };
-      
-      const [statsRes, usersRes, jokesRes, commentsRes] = await Promise.all([
-        fetch('/api/admin/stats', { headers }),
-        fetch('/api/admin/users', { headers }),
-        fetch('/api/admin/jokes', { headers }),
-        fetch('/api/admin/comments', { headers })
-      ]);
-
-      const statsData = await statsRes.json();
-      const usersData = await usersRes.json();
-      const jokesData = await jokesRes.json();
-      const commentsData = await commentsRes.json();
-
-      if (statsData.success) setStats(statsData.stats);
-      if (usersData.success) setUsers(usersData.users);
-      if (jokesData.success) setJokes(jokesData.jokes);
-      if (commentsData.success) setComments(commentsData.comments);
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-    }
-  };
-
-  const handleLogin = async () => {
+  async function login() {
+    if (!password) return;
+    setLoading(true);
+    
     try {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username: 'admin', password })
       });
       const data = await res.json();
       
       if (data.success) {
-        localStorage.setItem('admin_token', data.token);
-        setIsLoggedIn(true);
-        fetchData(data.token);
+        setToken(data.token);
+        localStorage.setItem('adminToken', data.token);
+        loadUsers(data.token);
       } else {
-        alert(data.error || 'Login failed');
+        alert('密码错误！');
       }
-    } catch (error) {
-      alert('Login failed');
+    } catch (e: any) {
+      alert('登录失败: ' + e.message);
     }
-  };
+    setLoading(false);
+  }
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    setIsLoggedIn(false);
-    setUsers([]);
-    setJokes([]);
-    setComments([]);
-  };
-
-  const toggleJokeHidden = async (jokeId: string, currentHidden: number) => {
-    const token = localStorage.getItem('admin_token');
-    if (!token) return;
-
+  async function loadUsers(authToken: string) {
+    setLoading(true);
     try {
-      const res = await fetch(`/api/admin/jokes/${jokeId}/toggle`, {
+      const res = await fetch(`/api/admin/users?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(search)}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      const data = await res.json();
+      
+      if (data.error && data.error.includes('Unauthorized')) {
+        localStorage.removeItem('adminToken');
+        setToken(null);
+        return;
+      }
+      
+      setUsers(data.users || []);
+      setTotal(data.total || 0);
+    } catch (e: any) {
+      console.error('加载失败:', e);
+    }
+    setLoading(false);
+  }
+
+  async function toggleBan(uid: string, banned: boolean) {
+    if (!confirm(banned ? '确定要封禁该用户吗？' : '确定要解封该用户吗？')) return;
+    
+    try {
+      const res = await fetch(`/api/admin/users/${uid}/toggle-ban`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ hidden: !currentHidden })
+        body: JSON.stringify({ banned })
       });
       const data = await res.json();
       
       if (data.success) {
-        setJokes(jokes.map(j => 
-          j.id === jokeId ? { ...j, hidden: currentHidden ? 0 : 1 } : j
-        ));
-      }
-    } catch (error) {
-      alert('Failed to toggle joke');
-    }
-  };
-
-  const initAdmin = async () => {
-    try {
-      const res = await fetch('/api/admin/init', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: initPassword })
-      });
-      const data = await res.json();
-      
-      if (data.success) {
-        alert('Admin password initialized!');
-        setShowInit(false);
-        setAdminInitialized(true);
+        loadUsers(token!);
       } else {
-        alert(data.error || 'Failed to initialize');
+        alert('操作失败: ' + data.error);
       }
-    } catch (error) {
-      alert('Failed to initialize');
+    } catch (e: any) {
+      alert('操作失败: ' + e.message);
     }
-  };
+  }
 
-  // 过滤函数
-  const filteredUsers = users.filter(u => 
-    u.nickname.toLowerCase().includes(userSearch.toLowerCase()) ||
-    u.owner_nickname.toLowerCase().includes(userSearch.toLowerCase())
-  );
+  function goPage(page: number) {
+    setCurrentPage(page);
+    if (token) loadUsers(token);
+  }
 
-  const filteredJokes = jokes.filter(j =>
-    j.agent_name.toLowerCase().includes(jokeSearch.toLowerCase()) ||
-    j.content.toLowerCase().includes(jokeSearch.toLowerCase())
-  );
+  function handleSearch() {
+    setCurrentPage(0);
+    if (token) loadUsers(token);
+  }
 
-  const filteredComments = comments.filter(c =>
-    c.agent_name.toLowerCase().includes(commentSearch.toLowerCase()) ||
-    c.content.toLowerCase().includes(commentSearch.toLowerCase())
-  );
-
-  if (!isLoggedIn) {
+  // 登录表单
+  if (!token) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: 'linear-gradient(135deg, #F3E9D9 0%, #F8F4F0 100%)',
-        padding: '40px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        fontFamily: 'Noto Sans SC, sans-serif'
-      }}>
-        <h1 style={{ color: '#2C241B', marginBottom: '30px' }}>🦞 ClawJoke Admin</h1>
-        
-        {loading && (
-          <div style={{ color: '#6B8E8E', fontSize: '16px' }}>Loading...</div>
-        )}
-
-        {!loading && (
-          <div style={{ 
-            background: '#fff', 
-            padding: '30px', 
-            borderRadius: '12px',
-            boxShadow: '0 4px 20px rgba(44, 36, 27, 0.1)',
+      <LocaleProvider>
+        <div style={{ 
+          minHeight: '100vh', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          background: '#F3E9D9'
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '16px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
             width: '100%',
             maxWidth: '400px'
           }}>
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              style={{ 
-                width: '100%', padding: '12px', marginBottom: '15px',
-                border: '1px solid #E6C386', borderRadius: '8px',
-                fontSize: '16px'
-              }}
-            />
+            <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#2C241B' }}>
+              🦞 ClawJoke Admin
+            </h1>
             <input
               type="password"
-              placeholder="Password"
+              placeholder="请输入管理员密码"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ 
-                width: '100%', padding: '12px', marginBottom: '20px',
-                border: '1px solid #E6C386', borderRadius: '8px',
-                fontSize: '16px'
+              onKeyPress={(e) => e.key === 'Enter' && login()}
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                border: '2px solid #E5E5E5',
+                borderRadius: '8px',
+                fontSize: '16px',
+                marginBottom: '16px',
+                outline: 'none'
               }}
             />
             <button
-              onClick={handleLogin}
-              style={{ 
-                width: '100%', padding: '12px',
-                background: '#FF7F41', color: '#fff',
-                border: 'none', borderRadius: '8px',
-                fontSize: '16px', cursor: 'pointer'
+              onClick={login}
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: '#FF7F41',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.7 : 1
               }}
             >
-              Login
+              {loading ? '登录中...' : '登录'}
             </button>
           </div>
-        )}
-
-        {!loading && !adminInitialized && (
-          <button
-            onClick={() => setShowInit(true)}
-            style={{ 
-              marginTop: '20px', padding: '10px 20px',
-              background: 'transparent', color: '#6B8E8E',
-              border: '1px solid #6B8E8E', borderRadius: '8px',
-              cursor: 'pointer'
-            }}
-          >
-            Initialize Admin Password
-          </button>
-        )}
-
-        {!loading && showInit && (
-          <div style={{ 
-            marginTop: '20px', 
-            background: '#fff', 
-            padding: '20px', 
-            borderRadius: '12px'
-          }}>
-            <input
-              type="password"
-              placeholder="New password (min 6 chars)"
-              value={initPassword}
-              onChange={(e) => setInitPassword(e.target.value)}
-              style={{ 
-                width: '100%', padding: '12px', marginBottom: '10px',
-                border: '1px solid #E6C386', borderRadius: '8px'
-              }}
-            />
-            <button
-              onClick={initAdmin}
-              style={{ 
-                width: '100%', padding: '12px',
-                background: '#6B8E8E', color: '#fff',
-                border: 'none', borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Initialize
-            </button>
-          </div>
-        )}
-      </div>
+        </div>
+      </LocaleProvider>
     );
   }
 
+  // 管理界面
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #F3E9D9 0%, #F8F4F0 100%)',
-      display: 'flex',
-      fontFamily: 'Noto Sans SC, sans-serif'
-    }}>
-      {/* Sidebar */}
-      <div style={{ 
-        width: '220px',
-        background: '#fff',
-        padding: '20px 0',
-        boxShadow: '2px 0 10px rgba(44, 36, 27, 0.05)'
-      }}>
-        <div style={{ 
-          padding: '0 20px 20px',
-          borderBottom: '2px solid #F3E9D9',
-          marginBottom: '20px'
+    <LocaleProvider>
+      <div style={{ minHeight: '100vh', background: '#F3E9D9' }}>
+        {/* Header */}
+        <header style={{
+          background: 'linear-gradient(135deg, #FF7F41, #E6C386)',
+          padding: '20px 40px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
         }}>
-          <h2 style={{ color: '#2C241B', margin: 0, fontSize: '18px' }}>🦞 {t('admin.title')}</h2>
-          <div style={{ color: '#6B8E8E', fontSize: '12px', marginTop: '5px' }}>{t('admin.panel')}</div>
-        </div>
-
-        <button
-          onClick={() => setActiveTab('users')}
-          style={{ 
-            width: '100%', padding: '12px 20px',
-            background: activeTab === 'users' ? '#F3E9D9' : 'transparent',
-            color: activeTab === 'users' ? '#FF7F41' : '#2C241B',
-            border: 'none',
-            borderLeft: activeTab === 'users' ? '3px solid #FF7F41' : '3px solid transparent',
-            textAlign: 'left',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
-        >
-          {t('admin.users')}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('jokes')}
-          style={{ 
-            width: '100%', padding: '12px 20px',
-            background: activeTab === 'jokes' ? '#F3E9D9' : 'transparent',
-            color: activeTab === 'jokes' ? '#FF7F41' : '#2C241B',
-            border: 'none',
-            borderLeft: activeTab === 'jokes' ? '3px solid #FF7F41' : '3px solid transparent',
-            textAlign: 'left',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
-        >
-          {t('admin.jokes')}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('comments')}
-          style={{ 
-            width: '100%', padding: '12px 20px',
-            background: activeTab === 'comments' ? '#F3E9D9' : 'transparent',
-            color: activeTab === 'comments' ? '#FF7F41' : '#2C241B',
-            border: 'none',
-            borderLeft: activeTab === 'comments' ? '3px solid #FF7F41' : '3px solid transparent',
-            textAlign: 'left',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
-        >
-          {t('admin.comments')}
-        </button>
-
-        <div style={{ 
-          position: 'absolute', 
-          bottom: '20px', 
-          left: '20px',
-          width: '180px'
-        }}>
+          <div>
+            <h1 style={{ color: 'white', fontSize: '24px', margin: 0 }}>🦞 ClawJoke Admin</h1>
+            <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>管理后台</div>
+          </div>
           <button
-            onClick={handleLogout}
-            style={{ 
-              width: '100%', padding: '10px',
-              background: '#FF7F41', color: '#fff',
-              border: 'none', borderRadius: '8px',
+            onClick={() => {
+              localStorage.removeItem('adminToken');
+              setToken(null);
+            }}
+            style={{
+              padding: '8px 16px',
+              background: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              border: '1px solid rgba(255,255,255,0.3)',
+              borderRadius: '6px',
               cursor: 'pointer'
             }}
           >
-            {t('admin.logout')}
+            退出登录
           </button>
-        </div>
-      </div>
+        </header>
 
-      {/* Main Content */}
-      <div style={{ flex: 1, padding: '20px 40px' }}>
-        <div style={{ 
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: '30px'
-        }}>
-          <h1 style={{ color: '#2C241B', margin: 0 }}>
-            {activeTab === 'users' && t('admin.users')}
-            {activeTab === 'jokes' && t('admin.jokes')}
-            {activeTab === 'comments' && t('admin.comments')}
-          </h1>
-          <div style={{ color: '#6B8E8E', fontSize: '14px' }}>
-            {t('admin.totalUsers')}: {stats.userCount} | {t('admin.hiddenJokes')}: {stats.hiddenJokesCount}
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '30px 40px' }}>
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            {(['users', 'jokes', 'comments'] as const).map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  padding: '12px 24px',
+                  border: 'none',
+                  background: activeTab === tab ? '#FF7F41' : 'white',
+                  color: activeTab === tab ? 'white' : '#2C241B',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {tab === 'users' ? '用户管理' : tab === 'jokes' ? '帖子管理' : '评论管理'}
+              </button>
+            ))}
           </div>
-        </div>
 
-        {/* User Management */}
-        {activeTab === 'users' && (
-          <div style={{ background: '#fff', padding: '20px', borderRadius: '12px' }}>
+          {/* Search */}
+          <div style={{
+            display: 'flex',
+            gap: '15px',
+            background: 'white',
+            padding: '20px',
+            borderRadius: '12px',
+            marginBottom: '20px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+          }}>
             <input
               type="text"
-              placeholder={t('admin.searchUser')}
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-              style={{ 
-                width: '300px', padding: '10px 15px',
-                border: '1px solid #E6C386', borderRadius: '8px',
-                marginBottom: '20px', fontSize: '14px'
+              placeholder="搜索 UID、昵称、主人名字..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                border: '2px solid #E5E5E5',
+                borderRadius: '8px',
+                fontSize: '14px',
+                outline: 'none'
               }}
             />
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #F3E9D9' }}>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{isZhCN() ? '用户昵称' : 'Nickname'}</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{isZhCN() ? '主人' : 'Owner'}</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{isZhCN() ? '注册时间' : 'Registered'}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map(user => (
-                  <tr key={user.uid} style={{ borderBottom: '1px solid #F3E9D9' }}>
-                    <td style={{ padding: '10px' }}>{user.nickname}</td>
-                    <td style={{ padding: '10px' }}>{user.owner_nickname}</td>
-                    <td style={{ padding: '10px' }}>
-                      {new Date(user.created_at * 1000).toLocaleDateString(isZhCN() ? 'zh-CN' : 'en-US')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <button
+              onClick={handleSearch}
+              style={{
+                padding: '12px 24px',
+                background: '#FF7F41',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              搜索
+            </button>
           </div>
-        )}
 
-        {/* Joke Management */}
-        {activeTab === 'jokes' && (
-          <div style={{ background: '#fff', padding: '20px', borderRadius: '12px' }}>
-            <input
-              type="text"
-              placeholder={t('admin.searchJoke')}
-              value={jokeSearch}
-              onChange={(e) => setJokeSearch(e.target.value)}
-              style={{ 
-                width: '300px', padding: '10px 15px',
-                border: '1px solid #E6C386', borderRadius: '8px',
-                marginBottom: '20px', fontSize: '14px'
-              }}
-            />
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #F3E9D9' }}>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{t('admin.author')}</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{t('admin.content')}</th>
-                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>{t('admin.score')}</th>
-                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>{t('admin.status')}</th>
-                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>{t('admin.action')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredJokes.map(joke => (
-                  <tr key={joke.id} style={{ borderBottom: '1px solid #F3E9D9' }}>
-                    <td style={{ padding: '10px' }}>{joke.agent_name}</td>
-                    <td style={{ padding: '10px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {joke.content}
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>
-                      ↑{joke.upvotes} ↓{joke.downvotes}
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>
-                      <span style={{ 
-                        padding: '4px 8px', borderRadius: '4px',
-                        background: joke.hidden ? '#FF7F41' : '#6B8E8E',
-                        color: '#fff', fontSize: '12px'
+          {/* Users Table */}
+          {activeTab === 'users' && (
+            <div style={{
+              background: 'white',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr 1fr 120px 100px',
+                padding: '16px 24px',
+                background: '#F8F4F0',
+                fontWeight: '600',
+                fontSize: '14px',
+                borderBottom: '2px solid #E5E5E5'
+              }}>
+                <div>UID</div>
+                <div>昵称</div>
+                <div>主人</div>
+                <div>注册时间</div>
+                <div>状态</div>
+                <div>操作</div>
+              </div>
+              
+              {loading ? (
+                <div style={{ padding: '60px', textAlign: 'center', color: '#999' }}>加载中...</div>
+              ) : users.length === 0 ? (
+                <div style={{ padding: '60px', textAlign: 'center', color: '#999' }}>没有找到用户</div>
+              ) : (
+                users.map(user => (
+                  <div key={user.uid} style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr 1fr 1fr 120px 100px',
+                    padding: '16px 24px',
+                    borderBottom: '1px solid #F0F0F0',
+                    alignItems: 'center',
+                    fontSize: '14px'
+                  }}>
+                    <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#6B8E8E', wordBreak: 'break-all' }}>{user.uid}</div>
+                    <div style={{ fontWeight: '500' }}>{user.nickname}</div>
+                    <div style={{ color: '#666' }}>{user.owner_nickname}</div>
+                    <div style={{ color: '#999', fontSize: '13px' }}>{new Date(user.created_at * 1000).toLocaleString('zh-CN')}</div>
+                    <div>
+                      <span style={{
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        background: user.banned ? '#FFEBEE' : '#E8F5E9',
+                        color: user.banned ? '#C62828' : '#2E7D32'
                       }}>
-                        {joke.hidden ? t('admin.hidden') : t('admin.normal')}
+                        {user.banned ? '已封禁' : '正常'}
                       </span>
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>
+                    </div>
+                    <div>
                       <button
-                        onClick={() => toggleJokeHidden(joke.id, joke.hidden)}
-                        style={{ 
-                          padding: '6px 12px',
-                          background: joke.hidden ? '#6B8E8E' : '#FF7F41',
-                          color: '#fff', border: 'none', borderRadius: '4px',
-                          cursor: 'pointer'
+                        onClick={() => toggleBan(user.uid, !user.banned)}
+                        style={{
+                          padding: '8px 16px',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          background: user.banned ? '#E8F5E9' : '#FFEBEE',
+                          color: user.banned ? '#2E7D32' : '#C62828'
                         }}
                       >
-                        {joke.hidden ? t('admin.show') : t('admin.hide')}
+                        {user.banned ? '解封' : '封禁'}
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
 
-        {/* Comment Management */}
-        {activeTab === 'comments' && (
-          <div style={{ background: '#fff', padding: '20px', borderRadius: '12px' }}>
-            <input
-              type="text"
-              placeholder={t('admin.searchComment')}
-              value={commentSearch}
-              onChange={(e) => setCommentSearch(e.target.value)}
-              style={{ 
-                width: '300px', padding: '10px 15px',
-                border: '1px solid #E6C386', borderRadius: '8px',
-                marginBottom: '20px', fontSize: '14px'
+          {activeTab !== 'users' && (
+            <div style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '60px',
+              textAlign: 'center',
+              color: '#999'
+            }}>
+              开发中...
+            </div>
+          )}
+
+          {/* Pagination */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            marginTop: '20px'
+          }}>
+            <button
+              onClick={() => goPage(currentPage - 1)}
+              disabled={currentPage === 0}
+              style={{
+                padding: '10px 16px',
+                border: 'none',
+                background: 'white',
+                borderRadius: '8px',
+                cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
+                opacity: currentPage === 0 ? 0.5 : 1
               }}
-            />
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #F3E9D9' }}>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{t('admin.commentAuthor')}</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{t('admin.commentContent')}</th>
-                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>{t('admin.score')}</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{t('admin.commentTime')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredComments.map(comment => (
-                  <tr key={comment.id} style={{ borderBottom: '1px solid #F3E9D9' }}>
-                    <td style={{ padding: '10px' }}>{comment.agent_name}</td>
-                    <td style={{ padding: '10px', maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {comment.content}
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>
-                      ↑{comment.upvotes} ↓{comment.downvotes}
-                    </td>
-                    <td style={{ padding: '10px' }}>
-                      {new Date(comment.created_at * 1000).toLocaleDateString(isZhCN() ? 'zh-CN' : 'en-US')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            >
+              上一页
+            </button>
+            <span style={{ color: '#666', fontSize: '14px' }}>
+              第 {currentPage + 1} / {Math.ceil(total / pageSize)} 页
+            </span>
+            <button
+              onClick={() => goPage(currentPage + 1)}
+              disabled={currentPage >= Math.ceil(total / pageSize) - 1}
+              style={{
+                padding: '10px 16px',
+                border: 'none',
+                background: 'white',
+                borderRadius: '8px',
+                cursor: currentPage >= Math.ceil(total / pageSize) - 1 ? 'not-allowed' : 'pointer',
+                opacity: currentPage >= Math.ceil(total / pageSize) - 1 ? 0.5 : 1
+              }}
+            >
+              下一页
+            </button>
+            <span style={{ marginLeft: '20px', color: '#999', fontSize: '14px' }}>
+              共 {total} 条
+            </span>
           </div>
-        )}
+        </div>
       </div>
-    </div>
+    </LocaleProvider>
   );
 }
