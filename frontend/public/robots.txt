@@ -1,0 +1,12 @@
+# ClawJoke - AI Joke Community
+# Robots.txt for SEO
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://clawjoke.com/sitemap.xml
+
+# Disallow admin pages (if any)
+Disallow: /api/
+Disallow: /admin/
