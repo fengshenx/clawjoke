@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { LocaleProvider, useLocale } from "./i18n";
+import { LocaleProvider, useLocale, setLocale as globalSetLocale } from "./i18n";
 
 function Header() {
-  const { locale, setLocale, t, isZhCN } = useLocale();
+  const { t, isZhCN } = useLocale();
 
   return (
     <header className="sticky top-0 z-50 border-b border-ink-black/10 bg-scroll-paper/80 backdrop-blur-md">
@@ -26,14 +26,14 @@ function Header() {
           </a>
           <div className="flex items-center gap-1 ml-2 border-l border-ink-black/20 pl-4">
             <button
-              onClick={() => setLocale('zhCN')}
+              onClick={() => globalSetLocale('zhCN')}
               className={`px-2 py-1 rounded ${isZhCN ? 'bg-persimmon text-white' : 'text-ink-black/40 hover:text-ink-black'}`}
             >
               中文
             </button>
             <span className="text-ink-black/20">|</span>
             <button
-              onClick={() => setLocale('enUS')}
+              onClick={() => globalSetLocale('enUS')}
               className={`px-2 py-1 rounded ${!isZhCN ? 'bg-persimmon text-white' : 'text-ink-black/40 hover:text-ink-black'}`}
             >
               EN

@@ -6,7 +6,6 @@ type Locale = 'zhCN' | 'enUS';
 
 interface LocaleContextType {
   locale: Locale;
-  setLocale: (locale: Locale) => void;
   t: (key: string) => string;
   isZhCN: boolean;
 }
@@ -192,6 +191,20 @@ const translations: Record<Locale, Record<string, string>> = {
 
 const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
 
+// 不导出的内部 hook，用于设置语言
+function useSetLocale() {
+  const context = useContext(LocaleContext);
+  if (!context) {
+    return () => {};
+  }
+  // 这个函数只应该在客户端使用
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+  // 使用 localStorage 的副作用
+  return () => {};
+}
+
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>('zhCN');
   const [loading, setLoading] = useState(true);
@@ -218,7 +231,11 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   const setLocale = (newLocale: Locale) => {
     setLocaleState(newLocale);
-    localStorage.setItem('clawjoke_locale', newLocale);
+    try {
+      localStorage.setItem('clawjoke_locale', newLocale);
+    } catch (e) {
+      // localStorage 可能在 SSR 时不可用
+    }
   };
 
   // 避免 SSR 时调用 t() 失败，返回空字符串
@@ -228,22 +245,47 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <LocaleContext.Provider value={{ locale, setLocale, t, isZhCN: locale === 'zhCN' }}>
+    <LocaleContext.Provider value={{ locale, t, isZhCN: locale === 'zhCN' }}>
+      {/* 在客户端时渲染语言切换器 */}
+      {typeof window !== 'undefined' && (
+        <LanguageSetter locale={locale} onLocaleChange={setLocale} />
+      )}
       {children}
     </LocaleContext.Provider>
   );
 }
 
+// 单独的组件处理语言设置，避免在 context 中序列化函数
+function LanguageSetter({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l: Locale) => void }) {
+  useEffect(() => {
+    // 订阅 locale 变化并保存到 localStorage
+    localStorage.setItem('clawjoke_locale', locale);
+  }, [locale]);
+
+  // 暴露全局方法用于切换语言
+  useEffect(() => {
+    (window as any).__clawjoke_setLocale = onLocaleChange;
+  }, [onLocaleChange]);
+
+  return null;
+}
+
 export function useLocale() {
   const context = useContext(LocaleContext);
   if (!context) {
-    // 返回默认值，避免 SSR 错误
+    // 返回默认值，避免 SSR 错误，不包含函数
     return {
-      locale: 'zhCN',
-      setLocale: () => {},
+      locale: 'zhCN' as Locale,
       t: (key: string) => key,
       isZhCN: true,
     };
   }
   return context;
+}
+
+// 导出的切换语言函数（客户端使用）
+export function setLocale(locale: Locale) {
+  if (typeof window !== 'undefined' && (window as any).__clawjoke_setLocale) {
+    (window as any).__clawjoke_setLocale(locale);
+  }
 }
