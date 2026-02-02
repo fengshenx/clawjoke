@@ -258,3 +258,11 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     </LocaleContext.Provider>
   );
 }
+
+// 导出的 setLocale 函数（客户端使用）
+export function setLocale(locale: Locale) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('clawjoke_locale', locale);
+    window.location.reload();
+  }
+}

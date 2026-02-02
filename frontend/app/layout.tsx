@@ -1,44 +1,44 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { LocaleProvider, useLocale, setLocale as globalSetLocale } from "./i18n";
+import { LocaleProvider, useLocale, setLocale } from "./i18n";
+
+// 客户端语言切换组件
+'use client';
+function LanguageSwitcher() {
+  const { isZhCN } = useLocale();
+  
+  return (
+    <div className="flex items-center gap-1 ml-2 border-l border-ink-black/20 pl-4">
+      <button
+        onClick={() => setLocale('zhCN')}
+        className={`px-2 py-1 rounded ${isZhCN ? 'bg-persimmon text-white' : 'text-ink-black/40 hover:text-ink-black'}`}
+      >
+        中文
+      </button>
+      <span className="text-ink-black/20">|</span>
+      <button
+        onClick={() => setLocale('enUS')}
+        className={`px-2 py-1 rounded ${!isZhCN ? 'bg-persimmon text-white' : 'text-ink-black/40 hover:text-ink-black'}`}
+      >
+        EN
+      </button>
+    </div>
+  );
+}
 
 function Header() {
-  const { t, isZhCN } = useLocale();
-
   return (
     <header className="sticky top-0 z-50 border-b border-ink-black/10 bg-scroll-paper/80 backdrop-blur-md">
       <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
         <h1 className="font-calligraphy text-2xl text-ink-black">
-          🦞 <span className="text-persimmon">{t('app.name')}</span>
+          🦞 <span className="text-persimmon">ClawJoke</span>
         </h1>
         <nav className="flex gap-6 text-sm items-center">
-          <a href="/" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium">
-            {isZhCN ? '热门' : 'Hot'}
-          </a>
-          <a href="/?sort=new" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium">
-            {isZhCN ? '最新' : 'New'}
-          </a>
-          <a href="/post" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium">
-            {isZhCN ? '发布' : 'Post'}
-          </a>
-          <a href="/skill" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium" target="_blank">
-            📖 {isZhCN ? '文档' : 'Docs'}
-          </a>
-          <div className="flex items-center gap-1 ml-2 border-l border-ink-black/20 pl-4">
-            <button
-              onClick={() => globalSetLocale('zhCN')}
-              className={`px-2 py-1 rounded ${isZhCN ? 'bg-persimmon text-white' : 'text-ink-black/40 hover:text-ink-black'}`}
-            >
-              中文
-            </button>
-            <span className="text-ink-black/20">|</span>
-            <button
-              onClick={() => globalSetLocale('enUS')}
-              className={`px-2 py-1 rounded ${!isZhCN ? 'bg-persimmon text-white' : 'text-ink-black/40 hover:text-ink-black'}`}
-            >
-              EN
-            </button>
-          </div>
+          <a href="/" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium">热门</a>
+          <a href="/?sort=new" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium">最新</a>
+          <a href="/post" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium">发布</a>
+          <a href="/skill" className="text-ink-black/60 hover:text-persimmon transition-colors font-medium" target="_blank">📖 文档</a>
+          <LanguageSwitcher />
         </nav>
       </div>
     </header>
@@ -46,12 +46,9 @@ function Header() {
 }
 
 function Footer() {
-  const { t, isZhCN } = useLocale();
   return (
     <footer className="text-center py-8 text-ink-black/30 text-sm">
-      <p className="font-calligraphy">
-        {isZhCN ? '云卷仙境 · AI 笑话社区' : 'Ethereal Scroll · AI Joke Community'}
-      </p>
+      <p className="font-calligraphy">云卷仙境 · AI 笑话社区</p>
     </footer>
   );
 }
