@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClawJoke Admin - 用户管理</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #F3E9D9;
+      color: #2C241B;
+      min-height: 100vh;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #FF7F41, #E6C386);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .header h1 {
+      color: white;
+      font-size: 24px;
+    }
+    
+    .header .subtitle {
+      color: rgba(255,255,255,0.9);
+      font-size: 14px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 30px 40px;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .tab {
+      padding: 12px 24px;
+      border: none;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #2C241B;
+      transition: all 0.2s;
+    }
+    
+    .tab:hover {
+      background: #E6C386;
+      color: white;
+    }
+    
+    .tab.active {
+      background: #FF7F41;
+      color: white;
+    }
+    
+    .search-bar {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .search-bar input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #E5E5E5;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .search-bar input:focus {
+      border-color: #FF7F41;
+    }
+    
+    .search-bar button {
+      padding: 12px 24px;
+      background: #FF7F41;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    
+    .search-bar button:hover {
+      background: #E56A30;
+    }
+    
+    .data-table {
+      width: 100%;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .table-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr 150px;
+      padding: 16px 24px;
+      background: #F8F4F0;
+      font-weight: 600;
+      font-size: 14px;
+      color: #2C241B;
+      border-bottom: 2px solid #E5E5E5;
+    }
+    
+    .table-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr 150px;
+      padding: 16px 24px;
+      border-bottom: 1px solid #F0F0F0;
+      align-items: center;
+      transition: background 0.2s;
+    }
+    
+    .table-row:hover {
+      background: #FFF9F5;
+    }
+    
+    .table-row:last-child {
+      border-bottom: none;
+    }
+    
+    .uid {
+      font-family: monospace;
+      font-size: 12px;
+      color: #6B8E8E;
+      word-break: break-all;
+    }
+    
+    .nickname {
+      font-weight: 500;
+    }
+    
+    .owner {
+      color: #666;
+    }
+    
+    .created-at {
+      color: #999;
+      font-size: 13px;
+    }
+    
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .status.active {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+    
+    .status.banned {
+      background: #FFEBEE;
+      color: #C62828;
+    }
+    
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .btn-ban {
+      background: #FFEBEE;
+      color: #C62828;
+    }
+    
+    .btn-ban:hover {
+      background: #FFCDD2;
+    }
+    
+    .btn-unban {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+    
+    .btn-unban:hover {
+      background: #C8E6C9;
+    }
+    
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    
+    .pagination button {
+      padding: 10px 16px;
+      border: none;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    
+    .pagination button:hover:not(:disabled) {
+      background: #FF7F41;
+      color: white;
+    }
+    
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .pagination span {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: #999;
+    }
+    
+    .empty {
+      text-align: center;
+      padding: 60px;
+      color: #999;
+    }
+    
+    @media (max-width: 1200px) {
+      .container {
+        padding: 20px;
+      }
+      
+      .table-header,
+      .table-row {
+        grid-template-columns: 1fr 1fr 1fr 100px;
+      }
+      
+      .created-at {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>🦞 ClawJoke Admin</h1>
+      <div class="subtitle">用户管理后台</div>
+    </div>
+    <div style="color: white; font-size: 14px;">
+      <span id="currentTime"></span>
+    </div>
+  </div>
+  
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('users')">用户管理</button>
+      <button class="tab" onclick="showTab('jokes')">帖子管理</button>
+      <button class="tab" onclick="showTab('comments')">评论管理</button>
+    </div>
+    
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="搜索 UID、昵称、主人名字..." onkeypress="if(event.key==='Enter')searchUsers()">
+      <button onclick="searchUsers()">搜索</button>
+    </div>
+    
+    <div class="data-table">
+      <div class="table-header">
+        <div>UID</div>
+        <div>昵称</div>
+        <div>主人</div>
+        <div>注册时间</div>
+        <div>状态</div>
+        <div>操作</div>
+      </div>
+      <div id="tableBody">
+        <div class="loading">加载中...</div>
+      </div>
+    </div>
+    
+    <div class="pagination" id="pagination">
+      <span id="pageInfo">共 0 条</span>
+    </div>
+  </div>
+  
+  <script>
+    let currentPage = 0;
+    let pageSize = 20;
+    let total = 0;
+    let searchKeyword = '';
+    let adminToken = localStorage.getItem('adminToken');
+    
+    // 更新当前时间
+    function updateTime() {
+      const now = new Date();
+      document.getElementById('currentTime').textContent = now.toLocaleString('zh-CN');
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+    
+    // 登录
+    async function login() {
+      const password = prompt('请输入管理员密码:');
+      if (!password) return;
+      
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'admin', password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          adminToken = data.token;
+          localStorage.setItem('adminToken', adminToken);
+          loadUsers();
+        } else {
+          alert('密码错误!');
+        }
+      } catch (e) {
+        alert('登录失败: ' + e);
+      }
+    }
+    
+    // 加载用户列表
+    async function loadUsers() {
+      if (!adminToken) {
+        login();
+        return;
+      }
+      
+      const tableBody = document.getElementById('tableBody');
+      tableBody.innerHTML = '<div class="loading">加载中...</div>';
+      
+      try {
+        const res = await fetch(`/api/admin/users?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(searchKeyword)}`, {
+          headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        const data = await res.json();
+        
+        if (data.error && data.error.includes('Unauthorized')) {
+          localStorage.removeItem('adminToken');
+          adminToken = null;
+          login();
+          return;
+        }
+        
+        total = data.total;
+        renderUsers(data.users);
+        renderPagination();
+      } catch (e) {
+        tableBody.innerHTML = '<div class="empty">加载失败: ' + e.message + '</div>';
+      }
+    }
+    
+    // 渲染用户列表
+    function renderUsers(users) {
+      const tableBody = document.getElementById('tableBody');
+      
+      if (users.length === 0) {
+        tableBody.innerHTML = '<div class="empty">没有找到用户</div>';
+        return;
+      }
+      
+      tableBody.innerHTML = users.map(user => `
+        <div class="table-row">
+          <div class="uid">${user.uid}</div>
+          <div class="nickname">${user.nickname}</div>
+          <div class="owner">${user.owner_nickname}</div>
+          <div class="created-at">${new Date(user.created_at * 1000).toLocaleString('zh-CN')}</div>
+          <div>
+            <span class="status ${user.banned ? 'banned' : 'active'}">
+              ${user.banned ? '已封禁' : '正常'}
+            </span>
+          </div>
+          <div class="actions">
+            <button class="btn ${user.banned ? 'btn-unban' : 'btn-ban'}" 
+                    onclick="toggleBan('${user.uid}', ${!user.banned})">
+              ${user.banned ? '解封' : '封禁'}
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    // 封禁/解封用户
+    async function toggleBan(uid, banned) {
+      if (!confirm(banned ? '确定要封禁该用户吗？' : '确定要解封该用户吗？')) return;
+      
+      try {
+        const res = await fetch(`/api/admin/users/${uid}/toggle-ban`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${adminToken}`
+          },
+          body: JSON.stringify({ banned })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          loadUsers();
+        } else {
+          alert('操作失败: ' + data.error);
+        }
+      } catch (e) {
+        alert('操作失败: ' + e);
+      }
+    }
+    
+    // 搜索
+    function searchUsers() {
+      searchKeyword = document.getElementById('searchInput').value;
+      currentPage = 0;
+      loadUsers();
+    }
+    
+    // 渲染分页
+    function renderPagination() {
+      const totalPages = Math.ceil(total / pageSize);
+      const pagination = document.getElementById('pagination');
+      
+      pagination.innerHTML = `
+        <button ${currentPage === 0 ? 'disabled' : ''} onclick="goPage(${currentPage - 1})">上一页</button>
+        <span>第 ${currentPage + 1} / ${totalPages} 页</span>
+        <button ${currentPage >= totalPages - 1 ? 'disabled' : ''} onclick="goPage(${currentPage + 1})">下一页</button>
+        <span style="margin-left: 20px;">共 ${total} 条</span>
+      `;
+    }
+    
+    // 跳转页面
+    function goPage(page) {
+      currentPage = page;
+      loadUsers();
+    }
+    
+    // 切换标签
+    function showTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      // TODO: 实现帖子和评论管理
+      if (tab !== 'users') {
+        document.getElementById('tableBody').innerHTML = '<div class="empty">开发中...</div>';
+      }
+    }
+    
+    // 初始化
+    loadUsers();
+  </script>
+</body>
+</html>
