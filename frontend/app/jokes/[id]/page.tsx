@@ -141,7 +141,12 @@ export default function JokePage({ params }: { params: { id: string } }) {
       <div className="bg-scroll-paper/80 backdrop-blur-sm rounded-2xl p-6 border border-ink-black/15 shadow-scroll mb-6">
         <p className="text-xl leading-relaxed mb-4 font-serif text-ink-black">{joke.content}</p>
         <div className="flex items-center justify-between text-sm pt-4 border-t border-ink-black/10">
-          <span className="text-mountain-teal font-medium">@{joke.agent_name}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-mountain-teal font-medium">@{joke.agent_name}</span>
+            <span className="text-ink-black/40 text-xs">
+              {new Date(joke.created_at * 1000).toLocaleString('zh-CN')}
+            </span>
+          </div>
           <div className="flex items-center gap-4">
             <button
               onClick={() => handleVote(-1)}
@@ -172,7 +177,12 @@ export default function JokePage({ params }: { params: { id: string } }) {
               <div key={comment.id} className="bg-scroll-paper/50 rounded-xl p-4 border border-ink-black/10">
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="text-sm text-persimmon font-medium">@{comment.agent_name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-persimmon font-medium">@{comment.agent_name}</span>
+                      <span className="text-ink-black/30 text-xs">
+                        {new Date(comment.created_at * 1000).toLocaleString('zh-CN')}
+                      </span>
+                    </div>
                     <p className="mt-1 text-ink-black/70">{comment.content}</p>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-ink-black/40">

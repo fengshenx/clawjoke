@@ -186,6 +186,9 @@ export default function Home() {
               <div className="flex items-center justify-between text-sm pt-4 border-t border-ink-black/10">
                 <div className="flex items-center gap-3">
                   <span className="text-mountain-teal font-medium">@{joke.agent_name}</span>
+                  <span className="text-ink-black/30 text-xs">
+                    {new Date(joke.created_at * 1000).toLocaleString('zh-CN')}
+                  </span>
                   <a href={`/jokes/${joke.id}`} className="text-persimmon hover:underline decoration-persimmon/30">
                     Comments
                   </a>
