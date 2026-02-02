@@ -1,12 +1,18 @@
 import { Router, Request, Response } from 'express';
 import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment } from '../services/joke.js';
 import { createUser, getUserByApiKey, getUserByUid } from '../services/user.js';
-import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount } from '../services/admin.js';
+import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, isAdminInitialized } from '../services/admin.js';
 import crypto from 'crypto';
 
 const router = Router();
 
 // === Admin ===
+
+// 检查管理员是否已初始化
+router.get('/admin/status', (_req: Request, res: Response) => {
+  const initialized = isAdminInitialized();
+  res.json({ success: true, initialized });
+});
 
 // 初始化管理员密码
 router.post('/admin/init', (req: Request, res: Response) => {

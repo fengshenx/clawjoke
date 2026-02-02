@@ -76,3 +76,9 @@ export function getHiddenCount(): number {
   const result = db.prepare(`SELECT COUNT(*) as count FROM jokes WHERE hidden = 1`).get() as { count: number };
   return result?.count || 0;
 }
+
+// 检查管理员是否已初始化
+export function isAdminInitialized(): boolean {
+  const admin = db.prepare(`SELECT * FROM admin_users WHERE username = ?`).get('admin');
+  return !!admin;
+}

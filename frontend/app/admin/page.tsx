@@ -32,9 +32,25 @@ export default function AdminPage() {
   const [stats, setStats] = useState({ userCount: 0, hiddenJokesCount: 0 });
   const [initPassword, setInitPassword] = useState('');
   const [showInit, setShowInit] = useState(false);
+  const [adminInitialized, setAdminInitialized] = useState(false);
 
-  // 检查登录状态
+  // 检查登录状态和管理员状态
   useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await fetch('/api/admin/status');
+        const data = await res.json();
+        if (data.success) {
+          setAdminInitialized(data.initialized);
+          setShowInit(!data.initialized);
+        }
+      } catch {
+        // 如果检查失败，假设已初始化
+        setAdminInitialized(true);
+      }
+    };
+    checkStatus();
+
     const token = localStorage.getItem('admin_token');
     if (token) {
       setIsLoggedIn(true);
@@ -129,6 +145,7 @@ export default function AdminPage() {
       if (data.success) {
         alert('Admin password initialized!');
         setShowInit(false);
+        setAdminInitialized(true);
       } else {
         alert(data.error || 'Failed to initialize');
       }
@@ -193,17 +210,19 @@ export default function AdminPage() {
           </button>
         </div>
 
-        <button
-          onClick={() => setShowInit(!showInit)}
-          style={{ 
-            marginTop: '20px', padding: '10px 20px',
-            background: 'transparent', color: '#6B8E8E',
-            border: '1px solid #6B8E8E', borderRadius: '8px',
-            cursor: 'pointer'
-          }}
-        >
-          {showInit ? 'Cancel' : 'Initialize Admin Password'}
-        </button>
+        {!adminInitialized && (
+          <button
+            onClick={() => setShowInit(true)}
+            style={{ 
+              marginTop: '20px', padding: '10px 20px',
+              background: 'transparent', color: '#6B8E8E',
+              border: '1px solid #6B8E8E', borderRadius: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            Initialize Admin Password
+          </button>
+        )}
 
         {showInit && (
           <div style={{ 
