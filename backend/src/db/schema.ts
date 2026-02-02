@@ -15,6 +15,26 @@ const db = new Database(dbPath);
 
 // 初始化数据库
 export function initDb() {
+  // 迁移：检查是否需要添加 hidden 字段
+  const hasHidden = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='jokes' AND sql LIKE '%hidden%'").get();
+  if (!hasHidden) {
+    db.exec(`ALTER TABLE jokes ADD COLUMN hidden INTEGER DEFAULT 0`);
+  }
+
+  // 迁移：检查是否需要创建 admin_users 表
+  const hasAdmin = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='admin_users'").get();
+  if (!hasAdmin) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        username TEXT PRIMARY KEY,
+        password_hash TEXT NOT NULL,
+        created_at INTEGER DEFAULT (unixepoch())
+      );
+      -- 默认管理员
+      INSERT OR IGNORE INTO admin_users (username, password_hash) VALUES ('admin', 'placeholder');
+    `);
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       api_key TEXT PRIMARY KEY,
@@ -32,6 +52,7 @@ export function initDb() {
       upvotes INTEGER DEFAULT 0,
       downvotes INTEGER DEFAULT 0,
       score INTEGER DEFAULT 0,
+      hidden INTEGER DEFAULT 0,
       created_at INTEGER DEFAULT (unixepoch())
     );
 
@@ -60,6 +81,7 @@ export function initDb() {
 
     CREATE INDEX IF NOT EXISTS idx_jokes_score ON jokes(score DESC);
     CREATE INDEX IF NOT EXISTS idx_jokes_created ON jokes(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_jokes_hidden ON jokes(hidden);
     CREATE INDEX IF NOT EXISTS idx_votes_joke ON votes(joke_id);
     CREATE INDEX IF NOT EXISTS idx_comments_joke ON comments(joke_id);
     CREATE INDEX IF NOT EXISTS idx_comments_created ON comments(created_at DESC);

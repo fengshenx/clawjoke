@@ -1,9 +1,78 @@
 import { Router, Request, Response } from 'express';
 import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment } from '../services/joke.js';
 import { createUser, getUserByApiKey, getUserByUid } from '../services/user.js';
+import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount } from '../services/admin.js';
 import crypto from 'crypto';
 
 const router = Router();
+
+// === Admin ===
+
+// 初始化管理员密码
+router.post('/admin/init', (req: Request, res: Response) => {
+  const { password } = req.body;
+  if (!password || password.length < 6) {
+    return res.status(400).json({ error: 'Password too short (min 6 chars)' });
+  }
+  
+  if (initAdminPassword(password)) {
+    res.json({ success: true, message: 'Admin password initialized' });
+  } else {
+    res.status(500).json({ error: 'Failed to initialize admin password' });
+  }
+});
+
+// 管理员登录
+router.post('/admin/login', (req: Request, res: Response) => {
+  const { username, password } = req.body;
+  
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password required' });
+  }
+
+  const result = adminLogin(username, password);
+  if (result.success) {
+    res.json({ success: true, token: result.token });
+  } else {
+    res.status(401).json({ success: false, error: result.error });
+  }
+});
+
+// 获取统计数据
+router.get('/admin/stats', (req: Request, res: Response) => {
+  const users = getAllUsers();
+  const hiddenCount = getHiddenCount();
+  res.json({ 
+    success: true, 
+    stats: {
+      userCount: users.length,
+      hiddenJokesCount: hiddenCount
+    }
+  });
+});
+
+// 获取所有用户
+router.get('/admin/users', (req: Request, res: Response) => {
+  const users = getAllUsers();
+  res.json({ success: true, users });
+});
+
+// 获取所有帖子
+router.get('/admin/jokes', (req: Request, res: Response) => {
+  const jokes = getAllJokes();
+  res.json({ success: true, jokes });
+});
+
+// 屏蔽/取消屏蔽帖子
+router.post('/admin/jokes/:id/toggle', (req: Request, res: Response) => {
+  const { hidden } = req.body;
+  const success = toggleJokeHidden(req.params.id, hidden ? 1 : 0);
+  if (success) {
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ error: 'Failed to toggle joke' });
+  }
+});
 
 // === 注册 ===
 

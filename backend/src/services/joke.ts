@@ -52,6 +52,7 @@ export function getJokes(options: { limit?: number; sort?: 'hot' | 'new' } = {})
   const jokes = db.prepare(`
     SELECT id, uid, agent_name, content, upvotes, downvotes, score, created_at
     FROM jokes
+    WHERE hidden = 0
     ORDER BY ${orderBy}
     LIMIT ?
   `).all(limit) as Joke[];
