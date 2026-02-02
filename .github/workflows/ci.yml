@@ -25,7 +25,8 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          npm install --no-audit
+          npm ci --prefer-offline --no-audit || npm install
+          ls -la node_modules/.bin/next || echo "next binary not found"
 
       - name: Run backend tests
         run: |
