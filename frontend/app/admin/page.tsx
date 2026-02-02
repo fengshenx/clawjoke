@@ -3,6 +3,155 @@
 import { useState, useEffect } from 'react';
 import { LocaleProvider } from '../i18n';
 
+// Settings Panel Component
+function SettingsPanel({ token }: { token: string }) {
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  async function handleChangePassword() {
+    setMessage(null);
+    
+    if (!oldPassword || !newPassword) {
+      setMessage({ type: 'error', text: '请填写所有密码字段' });
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      setMessage({ type: 'error', text: '新密码太短（至少6位）' });
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      setMessage({ type: 'error', text: '两次输入的密码不一致' });
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const res = await fetch('/api/admin/change-password', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ oldPassword, newPassword })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setMessage({ type: 'success', text: '密码修改成功' });
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setMessage({ type: 'error', text: data.error || '修改失败' });
+      }
+    } catch (e: any) {
+      setMessage({ type: 'error', text: '修改失败: ' + e.message });
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div style={{
+      background: 'white',
+      borderRadius: '12px',
+      padding: '30px',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+      maxWidth: '500px'
+    }}>
+      <h2 style={{ marginBottom: '24px', color: '#2C241B', fontSize: '20px' }}>修改密码</h2>
+      
+      {message && (
+        <div style={{
+          padding: '12px 16px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          background: message.type === 'success' ? '#E8F5E9' : '#FFEBEE',
+          color: message.type === 'success' ? '#2E7D32' : '#C62828',
+          fontSize: '14px'
+        }}>
+          {message.text}
+        </div>
+      )}
+      
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', color: '#666', fontSize: '14px' }}>原密码</label>
+        <input
+          type="password"
+          value={oldPassword}
+          onChange={(e) => setOldPassword(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            border: '2px solid #E5E5E5',
+            borderRadius: '8px',
+            fontSize: '14px',
+            outline: 'none'
+          }}
+        />
+      </div>
+      
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', color: '#666', fontSize: '14px' }}>新密码</label>
+        <input
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          placeholder="至少6位"
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            border: '2px solid #E5E5E5',
+            borderRadius: '8px',
+            fontSize: '14px',
+            outline: 'none'
+          }}
+        />
+      </div>
+      
+      <div style={{ marginBottom: '24px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', color: '#666', fontSize: '14px' }}>确认新密码</label>
+        <input
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            border: '2px solid #E5E5E5',
+            borderRadius: '8px',
+            fontSize: '14px',
+            outline: 'none'
+          }}
+        />
+      </div>
+      
+      <button
+        onClick={handleChangePassword}
+        disabled={loading}
+        style={{
+          width: '100%',
+          padding: '14px',
+          background: '#FF7F41',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          fontSize: '16px',
+          cursor: loading ? 'not-allowed' : 'pointer',
+          opacity: loading ? 0.7 : 1
+        }}
+      >
+        {loading ? '修改中...' : '修改密码'}
+      </button>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   // 所有 hooks 必须放在最顶层
   const [token, setToken] = useState<string | null>(null);
@@ -13,7 +162,7 @@ export default function AdminPage() {
   const [pageSize] = useState(20);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'users' | 'jokes' | 'comments'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'jokes' | 'comments' | 'settings'>('users');
   const [isSetup, setIsSetup] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -284,7 +433,7 @@ export default function AdminPage() {
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '30px 40px' }}>
           {/* Tabs */}
           <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-            {(['users', 'jokes', 'comments'] as const).map(tab => (
+            {(['users', 'jokes', 'comments', 'settings'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -299,12 +448,13 @@ export default function AdminPage() {
                   transition: 'all 0.2s'
                 }}
               >
-                {tab === 'users' ? '用户管理' : tab === 'jokes' ? '帖子管理' : '评论管理'}
+                {tab === 'users' ? '用户管理' : tab === 'jokes' ? '帖子管理' : tab === 'comments' ? '评论管理' : '设置'}
               </button>
             ))}
           </div>
 
-          {/* Search */}
+          {/* Search - only show for users/jokes/comments */}
+          {activeTab !== 'settings' && (
           <div style={{
             display: 'flex',
             gap: '15px',
@@ -423,7 +573,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {activeTab !== 'users' && (
+          {activeTab === 'jokes' || activeTab === 'comments' ? (
             <div style={{
               background: 'white',
               borderRadius: '12px',
@@ -433,9 +583,12 @@ export default function AdminPage() {
             }}>
               开发中...
             </div>
-          )}
+          ) : null}
 
-          {/* Pagination */}
+          {/* Settings Panel */}
+          {activeTab === 'settings' && <SettingsPanel token={token!} />}
+
+          {/* Pagination - only show for users/jokes/comments */}
           <div style={{
             display: 'flex',
             alignItems: 'center',

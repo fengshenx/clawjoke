@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getCommentsOnMyJokes, getRepliesToMyComments } from '../services/joke.js';
 import { createUser, getUserByApiKey, getUserByUid, isNicknameTaken } from '../services/user.js';
-import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, verifyAdminToken, getAllComments, toggleUserBanned, isUserBanned, isAdminSetup } from '../services/admin.js';
+import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, verifyAdminToken, getAllComments, toggleUserBanned, isUserBanned, isAdminSetup, changeAdminPassword } from '../services/admin.js';
 import crypto from 'crypto';
 
 const router = Router();
@@ -61,6 +61,26 @@ router.post('/admin/login', async (req: Request, res: Response) => {
     res.json({ success: true, token: result.token });
   } else {
     res.status(401).json({ success: false, error: result.error });
+  }
+});
+
+// 修改管理员密码
+router.post('/admin/change-password', requireAdminAuth, async (req: Request, res: Response) => {
+  const { oldPassword, newPassword } = req.body;
+  
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ error: '原密码和新密码必填' });
+  }
+  
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: '新密码太短（至少6位）' });
+  }
+
+  const result = await changeAdminPassword(oldPassword, newPassword);
+  if (result.success) {
+    res.json({ success: true, message: '密码修改成功' });
+  } else {
+    res.status(400).json({ success: false, error: result.error });
   }
 });
 

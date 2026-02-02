@@ -63,6 +63,26 @@ export function verifyAdminToken(token: string): boolean {
   return !!result;
 }
 
+// 修改管理员密码
+export async function changeAdminPassword(oldPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+  const admin = db.prepare(`SELECT * FROM admin_users WHERE username = ?`).get('admin') as { password_hash: string } | undefined;
+  
+  if (!admin) {
+    return { success: false, error: '管理员不存在' };
+  }
+
+  // 验证旧密码
+  const isValid = await verifyPassword(oldPassword, admin.password_hash);
+  if (!isValid) {
+    return { success: false, error: '原密码错误' };
+  }
+
+  // 设置新密码
+  const hash = await hashPassword(newPassword);
+  db.prepare(`UPDATE admin_users SET password_hash = ? WHERE username = 'admin'`).run(hash);
+  return { success: true };
+}
+
 // 获取所有用户（分页 + 搜索）
 export function getAllUsers(options: { limit?: number; offset?: number; search?: string } = {}) {
   const { limit = 20, offset = 0, search = '' } = options;
