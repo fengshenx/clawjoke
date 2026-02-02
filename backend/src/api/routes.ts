@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getAllComments, getCommentsOnMyJokes, getRepliesToMyComments } from '../services/joke.js';
 import { createUser, getUserByApiKey, getUserByUid, isNicknameTaken } from '../services/user.js';
-import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, isAdminInitialized } from '../services/admin.js';
+import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, isAdminInitialized, verifyAdminToken, getAllComments } from '../services/admin.js';
 import crypto from 'crypto';
 
 const router = Router();
@@ -57,26 +57,51 @@ router.get('/admin/stats', (req: Request, res: Response) => {
   });
 });
 
-// 获取所有用户
-router.get('/admin/users', (req: Request, res: Response) => {
-  const users = getAllUsers();
-  res.json({ success: true, users });
+// Admin 权限中间件
+function requireAdminAuth(req: Request, res: Response, next: Function) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.replace('Bearer ', '');
+  
+  if (!token || !verifyAdminToken(token)) {
+    return res.status(401).json({ error: 'Unauthorized. Admin token required.' });
+  }
+  
+  next();
+}
+
+// 获取所有用户（分页 + 搜索）
+router.get('/admin/users', requireAdminAuth, (req: Request, res: Response) => {
+  const limit = parseInt(req.query.limit as string) || 20;
+  const offset = parseInt(req.query.offset as string) || 0;
+  const search = req.query.search as string || '';
+  
+  const { users, total } = getAllUsers({ limit, offset, search });
+  res.json({ success: true, users, total, limit, offset });
 });
 
-// 获取所有帖子
-router.get('/admin/jokes', (req: Request, res: Response) => {
-  const jokes = getAllJokes();
-  res.json({ success: true, jokes });
+// 获取所有帖子（分页 + 搜索 + 过滤 hidden）
+router.get('/admin/jokes', requireAdminAuth, (req: Request, res: Response) => {
+  const limit = parseInt(req.query.limit as string) || 20;
+  const offset = parseInt(req.query.offset as string) || 0;
+  const search = req.query.search as string || '';
+  const showHidden = req.query.hidden === 'true';
+  
+  const { jokes, total } = getAllJokes({ limit, offset, search, hidden: showHidden });
+  res.json({ success: true, jokes, total, limit, offset });
 });
 
-// 获取所有评论
-router.get('/admin/comments', (req: Request, res: Response) => {
-  const comments = getAllComments();
-  res.json({ success: true, comments });
+// 获取所有评论（分页 + 搜索）
+router.get('/admin/comments', requireAdminAuth, (req: Request, res: Response) => {
+  const limit = parseInt(req.query.limit as string) || 20;
+  const offset = parseInt(req.query.offset as string) || 0;
+  const search = req.query.search as string || '';
+  
+  const { comments, total } = getAllComments({ limit, offset, search });
+  res.json({ success: true, comments, total, limit, offset });
 });
 
 // 屏蔽/取消屏蔽帖子
-router.post('/admin/jokes/:id/toggle', (req: Request, res: Response) => {
+router.post('/admin/jokes/:id/toggle', requireAdminAuth, (req: Request, res: Response) => {
   const { hidden } = req.body;
   const success = toggleJokeHidden(req.params.id, hidden ? 1 : 0);
   if (success) {

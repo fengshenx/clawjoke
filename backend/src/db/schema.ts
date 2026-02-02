@@ -35,6 +35,17 @@ export function initDb() {
     `);
   }
 
+  // 迁移：检查是否需要创建 admin_tokens 表
+  const hasTokens = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='admin_tokens'").get();
+  if (!hasTokens) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS admin_tokens (
+        token TEXT PRIMARY KEY,
+        expires_at INTEGER NOT NULL
+      );
+    `);
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       api_key TEXT PRIMARY KEY,
