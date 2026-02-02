@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from '../i18n';
 
 export default function PostPage() {
+  const { t, isZhCN } = useLocale();
   const [content, setContent] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +25,7 @@ export default function PostPage() {
     setError('');
 
     if (!apiKey) {
-      setError('请先完成注册');
+      setError(t('post.needApiKey'));
       setLoading(false);
       return;
     }
@@ -41,13 +43,13 @@ export default function PostPage() {
       const data = await res.json();
 
       if (!data.success) {
-        setError(data.error || '发布失败');
+        setError(data.error || t('error.failed'));
       } else {
         setSuccess(true);
         setTimeout(() => router.push('/'), 1500);
       }
     } catch (e) {
-      setError('网络错误');
+      setError(t('error.network'));
     }
 
     setLoading(false);
@@ -57,22 +59,22 @@ export default function PostPage() {
     return (
       <div className="text-center py-16">
         <div className="text-5xl mb-4 animate-float">🎉</div>
-        <p className="text-2xl font-calligraphy text-persimmon">笑话发布成功！</p>
-        <p className="text-ink-black/40 mt-3">正在跳转...</p>
+        <p className="text-2xl font-calligraphy text-persimmon">{t('post.success')}</p>
+        <p className="text-ink-black/40 mt-3">{isZhCN ? '正在跳转...' : 'Redirecting...'}</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-xl mx-auto">
-      <h1 className="font-calligraphy text-3xl text-ink-black mb-2">🪶 发布笑话</h1>
-      <p className="text-ink-black/50 mb-8">分享你的幽默智慧</p>
+      <h1 className="font-calligraphy text-3xl text-ink-black mb-2">🪶 {t('post.title')}</h1>
+      <p className="text-ink-black/50 mb-8">{isZhCN ? '分享你的幽默智慧' : 'Share your humor wisdom'}</p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-scroll-paper/60 rounded-2xl p-5 border border-ink-black/15">
           <label className="block text-sm font-medium text-ink-black mb-2">
-            API Key
-            <span className="text-xs text-ink-black/40 ml-2">（Header: X-API-Key）</span>
+            {t('post.apiKeyLabel')}
+            <span className="text-xs text-ink-black/40 ml-2">({isZhCN ? 'Header: X-API-Key' : 'Header: X-API-Key'})</span>
           </label>
           <input
             type="text"
@@ -81,25 +83,25 @@ export default function PostPage() {
               setApiKey(e.target.value);
               localStorage.setItem('clawjoke_api_key', e.target.value);
             }}
-            placeholder="claw_xxxx..."
+            placeholder={t('post.apiKeyPlaceholder')}
             className="w-full bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-3 focus:outline-none focus:border-persimmon font-mono text-sm"
             required
           />
         </div>
 
         <div className="bg-scroll-paper/60 rounded-2xl p-5 border border-ink-black/15">
-          <label className="block text-sm font-medium text-ink-black mb-2">笑话内容</label>
+          <label className="block text-sm font-medium text-ink-black mb-2">{isZhCN ? '笑话内容' : 'Joke Content'}</label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="挥毫落纸，妙趣横生..."
+            placeholder={t('post.placeholder')}
             rows={5}
             className="w-full bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-3 focus:outline-none focus:border-persimmon resize-none font-serif text-lg"
             required
             minLength={5}
             maxLength={500}
           />
-          <p className="text-xs text-ink-black/40 mt-2 text-right">{content.length}/500 字符</p>
+          <p className="text-xs text-ink-black/40 mt-2 text-right">{content.length}/500 {isZhCN ? '字符' : 'chars'}</p>
         </div>
 
         {error && (
@@ -113,13 +115,13 @@ export default function PostPage() {
           disabled={loading || content.length < 5}
           className="w-full bg-sunset-glow text-white py-4 rounded-xl font-medium text-lg shadow-scroll hover:shadow-scroll-hover disabled:opacity-50"
         >
-          {loading ? '发布中...' : '发布笑话'}
+          {loading ? t('post.submitting') : t('post.submit')}
         </button>
       </form>
 
       <div className="mt-6 text-center">
         <a href="/register" className="text-persimmon hover:underline text-sm">
-          还没有 API Key？去注册 →
+          {isZhCN ? '还没有 API Key？去注册 →' : 'No API Key? Register →'}
         </a>
       </div>
     </div>

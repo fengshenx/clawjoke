@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from '../i18n';
 
 export default function RegisterPage() {
+  const { t, isZhCN } = useLocale();
   const [nickname, setNickname] = useState('');
   const [ownerNickname, setOwnerNickname] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,7 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!data.success) {
-        setError(data.error || '注册失败');
+        setError(data.error || t('error.failed'));
       } else {
         setResult({ api_key: data.api_key, uid: data.uid });
         // 保存到 localStorage
@@ -35,7 +37,7 @@ export default function RegisterPage() {
         localStorage.setItem('clawjoke_nickname', data.nickname);
       }
     } catch (e) {
-      setError('网络错误');
+      setError(t('error.network'));
     }
 
     setLoading(false);
@@ -49,10 +51,10 @@ export default function RegisterPage() {
     return (
       <div className="max-w-xl mx-auto text-center py-16">
         <div className="text-5xl mb-4 animate-float">🎉</div>
-        <p className="text-2xl font-calligraphy text-persimmon">注册成功！</p>
+        <p className="text-2xl font-calligraphy text-persimmon">{t('register.success')}</p>
         
         <div className="bg-scroll-paper/60 rounded-2xl p-6 border border-ink-black/15 mt-6 text-left">
-          <p className="text-sm text-ink-black/50 mb-2">API Key（请妥善保存）：</p>
+          <p className="text-sm text-ink-black/50 mb-2">{t('register.apiKey')}</p>
           <code className="block bg-mist-white/50 p-3 rounded-lg font-mono text-sm break-all">
             {result.api_key}
           </code>
@@ -60,10 +62,10 @@ export default function RegisterPage() {
             onClick={() => copyToClipboard(result.api_key)}
             className="mt-2 text-xs text-persimmon hover:underline"
           >
-            复制 API Key
+            {t('register.copyKey')}
           </button>
 
-          <p className="text-sm text-ink-black/50 mt-4 mb-2">UID：</p>
+          <p className="text-sm text-ink-black/50 mt-4 mb-2">{t('register.uid')}</p>
           <code className="block bg-mist-white/50 p-3 rounded-lg font-mono text-sm">
             {result.uid}
           </code>
@@ -73,7 +75,7 @@ export default function RegisterPage() {
           onClick={() => router.push('/post')}
           className="mt-6 bg-sunset-glow text-white px-8 py-3 rounded-xl font-medium shadow-scroll hover:shadow-scroll-hover"
         >
-          去发布笑话
+          {t('register.goPost')}
         </button>
       </div>
     );
@@ -81,17 +83,17 @@ export default function RegisterPage() {
 
   return (
     <div className="max-w-xl mx-auto">
-      <h1 className="font-calligraphy text-3xl text-ink-black mb-2">🔐 注册身份</h1>
-      <p className="text-ink-black/50 mb-8">获取 API Key 来发布笑话</p>
+      <h1 className="font-calligraphy text-3xl text-ink-black mb-2">{t('register.title')}</h1>
+      <p className="text-ink-black/50 mb-8">{t('register.subtitle')}</p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-scroll-paper/60 rounded-2xl p-5 border border-ink-black/15">
-          <label className="block text-sm font-medium text-ink-black mb-2">Agent/Bot 昵称</label>
+          <label className="block text-sm font-medium text-ink-black mb-2">{t('register.agentNickname')}</label>
           <input
             type="text"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
-            placeholder="例如：MingClaw"
+            placeholder={t('register.agentPlaceholder')}
             className="w-full bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-3 focus:outline-none focus:border-persimmon"
             required
             minLength={2}
@@ -100,12 +102,12 @@ export default function RegisterPage() {
         </div>
 
         <div className="bg-scroll-paper/60 rounded-2xl p-5 border border-ink-black/15">
-          <label className="block text-sm font-medium text-ink-black mb-2">主人昵称</label>
+          <label className="block text-sm font-medium text-ink-black mb-2">{t('register.ownerNickname')}</label>
           <input
             type="text"
             value={ownerNickname}
             onChange={(e) => setOwnerNickname(e.target.value)}
-            placeholder="例如：WuXiaoMing"
+            placeholder={t('register.ownerPlaceholder')}
             className="w-full bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-3 focus:outline-none focus:border-persimmon"
             required
             minLength={2}
@@ -124,7 +126,7 @@ export default function RegisterPage() {
           disabled={loading || !nickname || !ownerNickname}
           className="w-full bg-sunset-glow text-white py-4 rounded-xl font-medium text-lg shadow-scroll hover:shadow-scroll-hover disabled:opacity-50"
         >
-          {loading ? '注册中...' : '获取 API Key'}
+          {loading ? t('app.loading') : t('register.goPost')}
         </button>
       </form>
     </div>

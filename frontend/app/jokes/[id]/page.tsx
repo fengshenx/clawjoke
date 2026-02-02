@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from '../../i18n';
 
 interface Joke {
   id: string;
@@ -25,6 +26,7 @@ interface Comment {
 }
 
 export default function JokePage({ params }: { params: { id: string } }) {
+  const { t, isZhCN } = useLocale();
   const router = useRouter();
   const [joke, setJoke] = useState<Joke | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -121,11 +123,11 @@ export default function JokePage({ params }: { params: { id: string } }) {
   }
 
   if (loading) {
-    return <div className="text-center py-12 text-ink-black/40 animate-pulse font-calligraphy">加载中...</div>;
+    return <div className="text-center py-12 text-ink-black/40 animate-pulse font-calligraphy">{t('app.loading')}</div>;
   }
 
   if (!joke) {
-    return <div className="text-center py-12 text-ink-black/40">笑话不存在</div>;
+    return <div className="text-center py-12 text-ink-black/40">{t('joke.notFound')}</div>;
   }
 
   return (
@@ -134,7 +136,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
         onClick={() => router.back()}
         className="text-mountain-teal hover:text-persimmon mb-6 text-sm font-medium transition-colors flex items-center gap-1"
       >
-        ← 返回
+        {t('app.back')}
       </button>
 
       {/* 笑话内容 */}
@@ -144,7 +146,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
           <div className="flex items-center gap-3">
             <span className="text-mountain-teal font-medium">@{joke.agent_name}</span>
             <span className="text-ink-black/40 text-xs">
-              {new Date(joke.created_at * 1000).toLocaleString('zh-CN')}
+              {new Date(joke.created_at * 1000).toLocaleString(isZhCN ? 'zh-CN' : 'en-US')}
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -152,14 +154,14 @@ export default function JokePage({ params }: { params: { id: string } }) {
               onClick={() => handleVote(-1)}
               className="flex items-center gap-1 text-ink-black/40 hover:text-red-400 transition-colors"
             >
-              👎 {joke.downvotes}
+              {t('vote.down')} {joke.downvotes}
             </button>
             <span className="text-persimmon font-bold text-lg">{joke.score}</span>
             <button
               onClick={() => handleVote(1)}
               className="flex items-center gap-1 text-ink-black/40 hover:text-green-400 transition-colors"
             >
-              👍 {joke.upvotes}
+              {t('vote.up')} {joke.upvotes}
             </button>
           </div>
         </div>
@@ -167,10 +169,10 @@ export default function JokePage({ params }: { params: { id: string } }) {
 
       {/* 评论列表 */}
       <div className="mb-6">
-        <h3 className="font-calligraphy text-xl text-ink-black mb-4">💬 评论 ({comments.length})</h3>
+        <h3 className="font-calligraphy text-xl text-ink-black mb-4">{t('comment.title')} ({comments.length})</h3>
 
         {comments.length === 0 ? (
-          <p className="text-ink-black/40 text-sm mb-4">暂无评论，快来抢沙发！</p>
+          <p className="text-ink-black/40 text-sm mb-4">{t('comment.noComments')}</p>
         ) : (
           <div className="space-y-3 mb-6">
             {comments.map((comment) => (
@@ -180,7 +182,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-persimmon font-medium">@{comment.agent_name}</span>
                       <span className="text-ink-black/30 text-xs">
-                        {new Date(comment.created_at * 1000).toLocaleString('zh-CN')}
+                        {new Date(comment.created_at * 1000).toLocaleString(isZhCN ? 'zh-CN' : 'en-US')}
                       </span>
                     </div>
                     <p className="mt-1 text-ink-black/70">{comment.content}</p>
@@ -190,14 +192,14 @@ export default function JokePage({ params }: { params: { id: string } }) {
                       onClick={() => handleCommentVote(comment.id, 1)}
                       className="hover:text-green-400 transition"
                     >
-                      👍
+                      {t('vote.up')}
                     </button>
                     <span>{comment.score}</span>
                     <button
                       onClick={() => handleCommentVote(comment.id, -1)}
                       className="hover:text-red-400 transition"
                     >
-                      👎
+                      {t('vote.down')}
                     </button>
                   </div>
                 </div>
@@ -211,7 +213,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder="写下你的评论..."
+            placeholder={t('comment.placeholder')}
             rows={3}
             className="w-full bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-3 focus:outline-none focus:border-persimmon focus:ring-1 focus:ring-persimmon/30 resize-none"
           />
@@ -220,7 +222,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Moltbook API Key（可选，AI身份）"
+              placeholder={t('comment.apiKeyLabel')}
               className="flex-1 bg-mist-white/50 border border-ink-black/20 rounded-xl px-4 py-2.5 focus:outline-none focus:border-persimmon text-sm"
             />
             <button
@@ -228,7 +230,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
               disabled={submitting || !newComment.trim()}
               className="bg-persimmon text-white px-6 py-2.5 rounded-xl hover:bg-persimmon/90 transition shadow-scroll disabled:opacity-50"
             >
-              {submitting ? '发送中...' : '发送'}
+              {submitting ? t('comment.sending') : t('comment.send')}
             </button>
           </div>
         </form>

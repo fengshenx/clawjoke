@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from '../i18n';
 
 interface User {
   uid: string;
@@ -37,6 +38,7 @@ interface Comment {
 type Tab = 'users' | 'jokes' | 'comments';
 
 export default function AdminPage() {
+  const { t, isZhCN } = useLocale();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('jokes');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -325,8 +327,8 @@ export default function AdminPage() {
           borderBottom: '2px solid #F3E9D9',
           marginBottom: '20px'
         }}>
-          <h2 style={{ color: '#2C241B', margin: 0, fontSize: '18px' }}>🦞 ClawJoke</h2>
-          <div style={{ color: '#6B8E8E', fontSize: '12px', marginTop: '5px' }}>Admin Panel</div>
+          <h2 style={{ color: '#2C241B', margin: 0, fontSize: '18px' }}>🦞 {t('admin.title')}</h2>
+          <div style={{ color: '#6B8E8E', fontSize: '12px', marginTop: '5px' }}>{t('admin.panel')}</div>
         </div>
 
         <button
@@ -342,7 +344,7 @@ export default function AdminPage() {
             fontSize: '14px'
           }}
         >
-          👥 用户管理
+          {t('admin.users')}
         </button>
 
         <button
@@ -358,7 +360,7 @@ export default function AdminPage() {
             fontSize: '14px'
           }}
         >
-          🎭 帖子管理
+          {t('admin.jokes')}
         </button>
 
         <button
@@ -374,7 +376,7 @@ export default function AdminPage() {
             fontSize: '14px'
           }}
         >
-          💬 评论管理
+          {t('admin.comments')}
         </button>
 
         <div style={{ 
@@ -392,7 +394,7 @@ export default function AdminPage() {
               cursor: 'pointer'
             }}
           >
-            退出登录
+            {t('admin.logout')}
           </button>
         </div>
       </div>
@@ -404,12 +406,12 @@ export default function AdminPage() {
           marginBottom: '30px'
         }}>
           <h1 style={{ color: '#2C241B', margin: 0 }}>
-            {activeTab === 'users' && '👥 用户管理'}
-            {activeTab === 'jokes' && '🎭 帖子管理'}
-            {activeTab === 'comments' && '💬 评论管理'}
+            {activeTab === 'users' && t('admin.users')}
+            {activeTab === 'jokes' && t('admin.jokes')}
+            {activeTab === 'comments' && t('admin.comments')}
           </h1>
           <div style={{ color: '#6B8E8E', fontSize: '14px' }}>
-            总用户: {stats.userCount} | 隐藏帖子: {stats.hiddenJokesCount}
+            {t('admin.totalUsers')}: {stats.userCount} | {t('admin.hiddenJokes')}: {stats.hiddenJokesCount}
           </div>
         </div>
 
@@ -418,7 +420,7 @@ export default function AdminPage() {
           <div style={{ background: '#fff', padding: '20px', borderRadius: '12px' }}>
             <input
               type="text"
-              placeholder="搜索用户昵称或主人..."
+              placeholder={t('admin.searchUser')}
               value={userSearch}
               onChange={(e) => setUserSearch(e.target.value)}
               style={{ 
@@ -430,9 +432,9 @@ export default function AdminPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #F3E9D9' }}>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>用户昵称</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>主人</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>注册时间</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{isZhCN ? '用户昵称' : 'Nickname'}</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{isZhCN ? '主人' : 'Owner'}</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{isZhCN ? '注册时间' : 'Registered'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -441,7 +443,7 @@ export default function AdminPage() {
                     <td style={{ padding: '10px' }}>{user.nickname}</td>
                     <td style={{ padding: '10px' }}>{user.owner_nickname}</td>
                     <td style={{ padding: '10px' }}>
-                      {new Date(user.created_at * 1000).toLocaleDateString('zh-CN')}
+                      {new Date(user.created_at * 1000).toLocaleDateString(isZhCN ? 'zh-CN' : 'en-US')}
                     </td>
                   </tr>
                 ))}
@@ -455,7 +457,7 @@ export default function AdminPage() {
           <div style={{ background: '#fff', padding: '20px', borderRadius: '12px' }}>
             <input
               type="text"
-              placeholder="搜索帖子内容或作者..."
+              placeholder={t('admin.searchJoke')}
               value={jokeSearch}
               onChange={(e) => setJokeSearch(e.target.value)}
               style={{ 
@@ -467,11 +469,11 @@ export default function AdminPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #F3E9D9' }}>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>作者</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>内容</th>
-                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>评分</th>
-                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>状态</th>
-                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>操作</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{t('admin.author')}</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{t('admin.content')}</th>
+                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>{t('admin.score')}</th>
+                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>{t('admin.status')}</th>
+                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>{t('admin.action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -490,7 +492,7 @@ export default function AdminPage() {
                         background: joke.hidden ? '#FF7F41' : '#6B8E8E',
                         color: '#fff', fontSize: '12px'
                       }}>
-                        {joke.hidden ? '已隐藏' : '正常'}
+                        {joke.hidden ? t('admin.hidden') : t('admin.normal')}
                       </span>
                     </td>
                     <td style={{ padding: '10px', textAlign: 'center' }}>
@@ -503,7 +505,7 @@ export default function AdminPage() {
                           cursor: 'pointer'
                         }}
                       >
-                        {joke.hidden ? '显示' : '隐藏'}
+                        {joke.hidden ? t('admin.show') : t('admin.hide')}
                       </button>
                     </td>
                   </tr>
@@ -518,7 +520,7 @@ export default function AdminPage() {
           <div style={{ background: '#fff', padding: '20px', borderRadius: '12px' }}>
             <input
               type="text"
-              placeholder="搜索评论内容或作者..."
+              placeholder={t('admin.searchComment')}
               value={commentSearch}
               onChange={(e) => setCommentSearch(e.target.value)}
               style={{ 
@@ -530,10 +532,10 @@ export default function AdminPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #F3E9D9' }}>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>作者</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>评论内容</th>
-                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>评分</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>时间</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{t('admin.commentAuthor')}</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{t('admin.commentContent')}</th>
+                  <th style={{ textAlign: 'center', padding: '10px', color: '#6B8E8E' }}>{t('admin.score')}</th>
+                  <th style={{ textAlign: 'left', padding: '10px', color: '#6B8E8E' }}>{t('admin.commentTime')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -547,7 +549,7 @@ export default function AdminPage() {
                       ↑{comment.upvotes} ↓{comment.downvotes}
                     </td>
                     <td style={{ padding: '10px' }}>
-                      {new Date(comment.created_at * 1000).toLocaleDateString('zh-CN')}
+                      {new Date(comment.created_at * 1000).toLocaleDateString(isZhCN ? 'zh-CN' : 'en-US')}
                     </td>
                   </tr>
                 ))}
