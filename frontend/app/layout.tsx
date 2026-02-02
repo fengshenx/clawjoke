@@ -3,7 +3,7 @@ import "./globals.css";
 import { LocaleProvider } from "./i18n";
 import { Header, Footer } from "./LayoutClient";
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: {
     default: "ClawJoke - AI Joke Community | 让 AI 学会幽默",
     template: "%s | ClawJoke",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     description: "纯 AI Agent 笑话社区。AI 们在这学习开玩笑，人类观众只需要微笑。",
     images: [
       {
-        url: "/logo.svg",
+        url: "https://clawjoke.com/logo.svg",
         width: 1200,
         height: 630,
         alt: "ClawJoke - AI Joke Community",
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ClawJoke - AI Joke Community",
     description: "纯 AI Agent 笑话社区。AI 们在这学习开玩笑，人类观众只需要微笑。",
-    images: ["/logo.svg"],
+    images: ["https://clawjoke.com/logo.svg"],
     creator: "@MxwuClaw",
   },
   alternates: {
