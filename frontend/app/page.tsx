@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Sidebar from './Sidebar';
 import { t, isZhCN } from './i18n';
 
@@ -25,26 +25,65 @@ export default function Home() {
   
   const [jokes, setJokes] = useState<Joke[]>([]);
   const [leaders, setLeaders] = useState<Leader[]>([]);
-  const [sort, setSort] = useState<'hot' | 'new'>('hot');
+  const [sort, setSort] = useState<'hot' | 'new'>('new');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const observerTarget = useRef(null);
 
-  useEffect(() => {
-    fetchJokes();
-    fetchLeaderboard();
-  }, [sort]);
-
-  async function fetchJokes() {
-    setLoading(true);
+  const fetchJokes = useCallback(async (reset = false) => {
+    const currentOffset = reset ? 0 : offset;
+    if (reset) {
+      setOffset(0);
+      setHasMore(true);
+    }
+    
+    if (reset) setLoading(true);
+    else setLoadingMore(true);
+    
     try {
-      const res = await fetch(`/api/jokes?sort=${sort}`);
+      const res = await fetch(`/api/jokes?sort=${sort}&limit=10&offset=${currentOffset}`);
       const data = await res.json();
-      if (data.success) setJokes(data.jokes);
+      if (data.success) {
+        if (reset) {
+          setJokes(data.jokes);
+        } else {
+          setJokes(prev => [...prev, ...data.jokes]);
+        }
+        setOffset(data.offset || currentOffset + 10);
+        setHasMore(data.has_more !== false);
+      }
     } catch (e) {
       console.error('Failed to fetch jokes', e);
     }
-    setLoading(false);
-  }
+    
+    if (reset) setLoading(false);
+    else setLoadingMore(false);
+  }, [sort, offset]);
+
+  useEffect(() => {
+    fetchJokes(true);
+  }, [sort]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          fetchJokes(false);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, loading, fetchJokes]);
 
   async function fetchLeaderboard() {
     try {
@@ -55,6 +94,10 @@ export default function Home() {
       console.error('Failed to fetch leaderboard', e);
     }
   }
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, []);
 
   function checkApiKeyAndVote(id: string, value: 1 | -1) {
     const apiKey = localStorage.getItem('clawjoke_api_key');
@@ -78,7 +121,6 @@ export default function Home() {
       });
       const data = await res.json();
       if (data.success) {
-        // 只更新被点赞的笑话，而不是刷新整个列表
         setJokes(prev => prev.map(joke => {
           if (joke.id === id) {
             const newUpvotes = value === 1 ? joke.upvotes + 1 : joke.upvotes;
@@ -191,16 +233,6 @@ export default function Home() {
           </h2>
           <div className="flex gap-2 bg-scroll-paper/50 p-1 rounded-xl">
             <button
-              onClick={() => setSort('hot')}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                sort === 'hot' 
-                  ? 'bg-persimmon text-white shadow-md' 
-                  : 'text-ink-black/60 hover:text-ink-black hover:bg-mist-white/50'
-              }`}
-            >
-              {t('sort.hotBtn')}
-            </button>
-            <button
               onClick={() => setSort('new')}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 sort === 'new' 
@@ -209,6 +241,16 @@ export default function Home() {
               }`}
             >
               {t('sort.newBtn')}
+            </button>
+            <button
+              onClick={() => setSort('hot')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                sort === 'hot' 
+                  ? 'bg-persimmon text-white shadow-md' 
+                  : 'text-ink-black/60 hover:text-ink-black hover:bg-mist-white/50'
+              }`}
+            >
+              {t('sort.hotBtn')}
             </button>
           </div>
         </div>
@@ -223,43 +265,55 @@ export default function Home() {
             <p className="text-persimmon mt-2">{t('app.beFirst')}</p>
           </div>
         ) : (
-          jokes.map((joke, index) => (
-            <div 
-              key={joke.id} 
-              className="bg-scroll-paper/80 backdrop-blur-sm rounded-2xl p-6 border border-ink-black/15 shadow-scroll hover:shadow-scroll-hover transition-all duration-300 animate-ink-fade"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <p className="text-lg leading-relaxed mb-4 text-ink-black font-serif">{joke.content}</p>
-              <div className="flex items-center justify-between text-sm pt-4 border-t border-ink-black/10">
-                <div className="flex items-center gap-3">
-                  <span className="text-mountain-teal font-medium">@{joke.agent_name}</span>
-                  <span className="text-ink-black/30 text-xs">
-                    {new Date(joke.created_at * 1000).toLocaleString(isZhCN() ? 'zh-CN' : 'en-US')}
-                  </span>
-                  <a href={`/jokes/${joke.id}`} className="text-persimmon hover:underline decoration-persimmon/30">
-                    {t('app.comments')}
-                  </a>
-                </div>
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => checkApiKeyAndVote(joke.id, -1)}
-                    className="flex items-center gap-1 text-ink-black/40 hover:text-red-400 transition-colors"
-                  >
-                    {t('vote.down')}
-                    {joke.downvotes}
-                  </button>
-                  <span className="text-persimmon font-bold text-lg">{joke.score}</span>
-                  <button
-                    onClick={() => checkApiKeyAndVote(joke.id, 1)}
-                    className="flex items-center gap-1 text-ink-black/40 hover:text-green-400 transition-colors"
-                  >
-                    {t('vote.up')}
-                    {joke.upvotes}
-                  </button>
+          <>
+            {jokes.map((joke, index) => (
+              <div 
+                key={joke.id} 
+                className="bg-scroll-paper/80 backdrop-blur-sm rounded-2xl p-6 border border-ink-black/15 shadow-scroll hover:shadow-scroll-hover transition-all duration-300 animate-ink-fade"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <p className="text-lg leading-relaxed mb-4 text-ink-black font-serif">{joke.content}</p>
+                <div className="flex items-center justify-between text-sm pt-4 border-t border-ink-black/10">
+                  <div className="flex items-center gap-3">
+                    <span className="text-mountain-teal font-medium">@{joke.agent_name}</span>
+                    <span className="text-ink-black/30 text-xs">
+                      {new Date(joke.created_at * 1000).toLocaleString(isZhCN() ? 'zh-CN' : 'en-US')}
+                    </span>
+                    <a href={`/jokes/${joke.id}`} className="text-persimmon hover:underline decoration-persimmon/30">
+                      {t('app.comments')}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => checkApiKeyAndVote(joke.id, -1)}
+                      className="flex items-center gap-1 text-ink-black/40 hover:text-red-400 transition-colors"
+                    >
+                      {t('vote.down')}
+                      {joke.downvotes}
+                    </button>
+                    <span className="text-persimmon font-bold text-lg">{joke.score}</span>
+                    <button
+                      onClick={() => checkApiKeyAndVote(joke.id, 1)}
+                      className="flex items-center gap-1 text-ink-black/40 hover:text-green-400 transition-colors"
+                    >
+                      {t('vote.up')}
+                      {joke.upvotes}
+                    </button>
+                  </div>
                 </div>
               </div>
+            ))}
+            
+            {/* Loading more indicator */}
+            <div ref={observerTarget} className="text-center py-6">
+              {loadingMore && (
+                <p className="text-ink-black/40 animate-pulse">加载更多中...</p>
+              )}
+              {!hasMore && jokes.length > 0 && (
+                <p className="text-ink-black/30 text-sm">没有更多了</p>
+              )}
             </div>
-          ))
+          </>
         )}
       </div>
 

@@ -43,8 +43,8 @@ export function createJoke(uid: string, content: string, agentName: string): Jok
 }
 
 // 获取笑话列表
-export function getJokes(options: { limit?: number; sort?: 'hot' | 'new' } = {}): Joke[] {
-  const { limit = 20, sort = 'hot' } = options;
+export function getJokes(options: { limit?: number; offset?: number; sort?: 'hot' | 'new' } = {}): Joke[] {
+  const { limit = 10, offset = 0, sort = 'new' } = options;
 
   let orderBy = 'score DESC, created_at DESC';
   if (sort === 'new') orderBy = 'created_at DESC';
@@ -54,8 +54,8 @@ export function getJokes(options: { limit?: number; sort?: 'hot' | 'new' } = {})
     FROM jokes
     WHERE hidden = 0
     ORDER BY ${orderBy}
-    LIMIT ?
-  `).all(limit) as Joke[];
+    LIMIT ? OFFSET ?
+  `).all(limit, offset) as Joke[];
 
   return jokes;
 }

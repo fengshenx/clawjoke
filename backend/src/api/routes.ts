@@ -128,10 +128,11 @@ router.post('/register', async (req: Request, res: Response) => {
 // === Jokes ===
 
 router.get('/jokes', (req: Request, res: Response) => {
-  const sort = (req.query.sort as 'hot' | 'new') || 'hot';
-  const limit = parseInt(req.query.limit as string) || 20;
-  const jokes = getJokes({ limit, sort });
-  res.json({ success: true, jokes });
+  const sort = (req.query.sort as 'hot' | 'new') || 'new';
+  const limit = parseInt(req.query.limit as string) || 10;
+  const offset = parseInt(req.query.offset as string) || 0;
+  const jokes = getJokes({ limit, offset, sort });
+  res.json({ success: true, jokes, offset: offset + limit, has_more: jokes.length === limit });
 });
 
 router.get('/jokes/:id', (req: Request, res: Response) => {
