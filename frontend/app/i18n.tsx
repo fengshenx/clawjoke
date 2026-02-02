@@ -1,16 +1,10 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useContext, useState, useEffect, ReactNode, createContext } from 'react';
 
 type Locale = 'zhCN' | 'enUS';
 
-// Context 类型不包含函数，避免 SSR 序列化问题
-interface LocaleContextType {
-  locale: Locale;
-  t: (key: string) => string;
-  isZhCN: boolean;
-}
-
+// 简单翻译对象
 const translations: Record<Locale, Record<string, string>> = {
   zhCN: {
     'app.name': 'ClawJoke',
@@ -190,27 +184,16 @@ const translations: Record<Locale, Record<string, string>> = {
   },
 };
 
-const LocaleContext = createContext<LocaleContextType | null>(null);
-
-// 内部状态，不导出
-function useLocaleInternal() {
-  return useContext(LocaleContext);
+// 获取当前语言
+export function getLocale(): Locale {
+  if (typeof window === 'undefined') return 'zhCN';
+  const saved = localStorage.getItem('clawjoke_locale') as Locale;
+  if (saved === 'zhCN' || saved === 'enUS') return saved;
+  const browserLang = navigator.language.toLowerCase();
+  return browserLang.startsWith('zh') ? 'zhCN' : 'enUS';
 }
 
-// 导出的 hook，安全的默认值
-export function useLocale(): LocaleContextType {
-  const context = useLocaleInternal();
-  if (!context) {
-    return {
-      locale: 'zhCN',
-      t: (key: string) => key,
-      isZhCN: true,
-    };
-  }
-  return context;
-}
-
-// 语言切换函数（客户端使用）
+// 设置语言
 export function setLocale(locale: Locale) {
   if (typeof window !== 'undefined') {
     localStorage.setItem('clawjoke_locale', locale);
@@ -218,51 +201,18 @@ export function setLocale(locale: Locale) {
   }
 }
 
+// 翻译函数
+export function t(key: string): string {
+  const locale = getLocale();
+  return translations[locale]?.[key] || key;
+}
+
+// 是否是中文
+export function isZhCN(): boolean {
+  return getLocale() === 'zhCN';
+}
+
+// 简单的 LocaleProvider（只渲染 children）
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('zhCN');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // 检测浏览器语言
-    const browserLang = navigator.language.toLowerCase();
-    let initialLocale: Locale = 'zhCN';
-    if (browserLang.startsWith('zh')) {
-      initialLocale = 'zhCN';
-    } else {
-      initialLocale = 'enUS';
-    }
-    
-    // 检查本地存储
-    const saved = localStorage.getItem('clawjoke_locale') as Locale;
-    if (saved && (saved === 'zhCN' || saved === 'enUS')) {
-      initialLocale = saved;
-    }
-    
-    setLocaleState(initialLocale);
-    setLoading(false);
-  }, []);
-
-  const setLocaleWithStorage = (newLocale: Locale) => {
-    setLocaleState(newLocale);
-    localStorage.setItem('clawjoke_locale', newLocale);
-  };
-
-  const t = (key: string): string => {
-    if (loading) return '';
-    return translations[locale][key] || key;
-  };
-
-  return (
-    <LocaleContext.Provider value={{ locale, t, isZhCN: locale === 'zhCN' }}>
-      {children}
-    </LocaleContext.Provider>
-  );
-}
-
-// 导出的 setLocale 函数（客户端使用）
-export function setLocale(locale: Locale) {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('clawjoke_locale', locale);
-    window.location.reload();
-  }
+  return <>{children}</>;
 }
