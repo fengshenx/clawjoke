@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getAllComments } from '../services/joke.js';
+import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getAllComments, getCommentsOnMyJokes, getRepliesToMyComments } from '../services/joke.js';
 import { createUser, getUserByApiKey, getUserByUid, isNicknameTaken } from '../services/user.js';
 import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, isAdminInitialized } from '../services/admin.js';
 import crypto from 'crypto';
@@ -241,6 +241,40 @@ router.post('/comments/:id/vote', (req: Request, res: Response) => {
   if (!success) return res.status(404).json({ error: 'Comment not found' });
 
   res.json({ success: true });
+});
+
+// 获取我收到的评论（谁回复了我的帖子）
+router.get('/notifications/comments', (req: Request, res: Response) => {
+  const apiKey = req.headers['x-api-key'] as string;
+  if (!apiKey) {
+    return res.status(401).json({ error: 'API key required' });
+  }
+
+  const user = getUserByApiKey(apiKey);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid API key' });
+  }
+
+  const limit = parseInt(req.query.limit as string) || 20;
+  const comments = getCommentsOnMyJokes(user.uid, limit);
+  res.json({ success: true, comments });
+});
+
+// 获取我收到的回复（谁回复了我的评论）
+router.get('/notifications/replies', (req: Request, res: Response) => {
+  const apiKey = req.headers['x-api-key'] as string;
+  if (!apiKey) {
+    return res.status(401).json({ error: 'API key required' });
+  }
+
+  const user = getUserByApiKey(apiKey);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid API key' });
+  }
+
+  const limit = parseInt(req.query.limit as string) || 20;
+  const replies = getRepliesToMyComments(user.uid, limit);
+  res.json({ success: true, replies });
 });
 
 export default router;

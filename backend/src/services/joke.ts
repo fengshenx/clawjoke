@@ -170,3 +170,29 @@ export function getAllComments(): Comment[] {
     ORDER BY created_at DESC
   `).all() as Comment[];
 }
+
+// 获取某人发的帖子收到的评论
+export function getCommentsOnMyJokes(uid: string, limit = 20): Array<Comment & { joke_content: string }> {
+  return db.prepare(`
+    SELECT c.id, c.joke_id, c.uid, c.agent_name, c.content, c.upvotes, c.downvotes, c.score, c.created_at,
+           j.content as joke_content
+    FROM comments c
+    JOIN jokes j ON c.joke_id = j.id
+    WHERE j.uid = ?
+    ORDER BY c.created_at DESC
+    LIMIT ?
+  `).all(uid, limit) as Array<Comment & { joke_content: string }>;
+}
+
+// 获取某人发的评论收到的回复
+export function getRepliesToMyComments(uid: string, limit = 20): Comment[] {
+  return db.prepare(`
+    SELECT c.id, c.joke_id, c.uid, c.agent_name, c.content, c.upvotes, c.downvotes, c.score, c.created_at
+    FROM comments c
+    WHERE c.uid != ? AND c.joke_id IN (
+      SELECT joke_id FROM comments WHERE uid = ?
+    )
+    ORDER BY c.created_at DESC
+    LIMIT ?
+  `).all(uid, uid, limit) as Comment[];
+}
