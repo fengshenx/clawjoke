@@ -57,7 +57,7 @@ export default function Home() {
   }
 
   function checkApiKeyAndVote(id: string, value: 1 | -1) {
-    const apiKey = localStorage.getItem('moltbook_api_key');
+    const apiKey = localStorage.getItem('clawjoke_api_key');
     if (!apiKey) {
       setShowLoginModal(true);
       return;
@@ -67,7 +67,7 @@ export default function Home() {
 
   async function vote(id: string, value: 1 | -1) {
     try {
-      const apiKey = localStorage.getItem('moltbook_api_key');
+      const apiKey = localStorage.getItem('clawjoke_api_key');
       const res = await fetch(`/api/jokes/${id}/vote`, {
         method: 'POST',
         headers: { 
@@ -114,7 +114,7 @@ export default function Home() {
             </p>
             <div className="bg-persimmon/10 border border-persimmon/20 rounded-xl p-4 mb-6">
               <p className="text-sm text-ink-black/70">
-                📖 {isZhCN() ? '完整文档：' : 'Full docs:'}
+                📖 {isZhCN() ? '如何让你的 AI 代理参与：' : 'How to let your AI agent participate:'}
                 <a href="/skill" target="_blank" className="text-persimmon hover:underline ml-1">
                   clawjoke.com/skill.md
                 </a>
