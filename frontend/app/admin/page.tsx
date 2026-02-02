@@ -455,45 +455,46 @@ export default function AdminPage() {
 
           {/* Search - only show for users/jokes/comments */}
           {activeTab !== 'settings' && (
-          <div style={{
-            display: 'flex',
-            gap: '15px',
-            background: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            marginBottom: '20px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
-          }}>
-            <input
-              type="text"
-              placeholder="搜索 UID、昵称、主人名字..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              style={{
-                flex: 1,
-                padding: '12px 16px',
-                border: '2px solid #E5E5E5',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none'
-              }}
-            />
-            <button
-              onClick={handleSearch}
-              style={{
-                padding: '12px 24px',
-                background: '#FF7F41',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              搜索
-            </button>
-          </div>
+            <div style={{
+              display: 'flex',
+              gap: '15px',
+              background: 'white',
+              padding: '20px',
+              borderRadius: '12px',
+              marginBottom: '20px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+            }}>
+              <input
+                type="text"
+                placeholder="搜索 UID、昵称、主人名字..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  border: '2px solid #E5E5E5',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+              />
+              <button
+                onClick={handleSearch}
+                style={{
+                  padding: '12px 24px',
+                  background: '#FF7F41',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                搜索
+              </button>
+            </div>
+          )}
 
           {/* Users Table */}
           {activeTab === 'users' && (
@@ -589,48 +590,50 @@ export default function AdminPage() {
           {activeTab === 'settings' && <SettingsPanel token={token!} />}
 
           {/* Pagination - only show for users/jokes/comments */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            marginTop: '20px'
-          }}>
-            <button
-              onClick={() => goPage(currentPage - 1)}
-              disabled={currentPage === 0}
-              style={{
-                padding: '10px 16px',
-                border: 'none',
-                background: 'white',
-                borderRadius: '8px',
-                cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
-                opacity: currentPage === 0 ? 0.5 : 1
-              }}
-            >
-              上一页
-            </button>
-            <span style={{ color: '#666', fontSize: '14px' }}>
-              第 {currentPage + 1} / {Math.ceil(total / pageSize)} 页
-            </span>
-            <button
-              onClick={() => goPage(currentPage + 1)}
-              disabled={currentPage >= Math.ceil(total / pageSize) - 1}
-              style={{
-                padding: '10px 16px',
-                border: 'none',
-                background: 'white',
-                borderRadius: '8px',
-                cursor: currentPage >= Math.ceil(total / pageSize) - 1 ? 'not-allowed' : 'pointer',
-                opacity: currentPage >= Math.ceil(total / pageSize) - 1 ? 0.5 : 1
-              }}
-            >
-              下一页
-            </button>
-            <span style={{ marginLeft: '20px', color: '#999', fontSize: '14px' }}>
-              共 {total} 条
-            </span>
-          </div>
+          {activeTab !== 'settings' && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              marginTop: '20px'
+            }}>
+              <button
+                onClick={() => goPage(currentPage - 1)}
+                disabled={currentPage === 0}
+                style={{
+                  padding: '10px 16px',
+                  border: 'none',
+                  background: 'white',
+                  borderRadius: '8px',
+                  cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
+                  opacity: currentPage === 0 ? 0.5 : 1
+                }}
+              >
+                上一页
+              </button>
+              <span style={{ color: '#666', fontSize: '14px' }}>
+                第 {currentPage + 1} / {Math.ceil(total / pageSize) || 1} 页
+              </span>
+              <button
+                onClick={() => goPage(currentPage + 1)}
+                disabled={currentPage >= Math.ceil(total / pageSize) - 1}
+                style={{
+                  padding: '10px 16px',
+                  border: 'none',
+                  background: 'white',
+                  borderRadius: '8px',
+                  cursor: currentPage >= Math.ceil(total / pageSize) - 1 ? 'not-allowed' : 'pointer',
+                  opacity: currentPage >= Math.ceil(total / pageSize) - 1 ? 0.5 : 1
+                }}
+              >
+                下一页
+              </button>
+              <span style={{ marginLeft: '20px', color: '#999', fontSize: '14px' }}>
+                共 {total} 条
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </LocaleProvider>
