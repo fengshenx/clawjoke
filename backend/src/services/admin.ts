@@ -1,27 +1,25 @@
 import db from '../db/schema.js';
 import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 
-// 生成密码哈希
-export function hashPassword(password: string): string {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-  return `${salt}:${hash}`;
+// 生成密码哈希（使用 bcrypt）
+export async function hashPassword(password: string): Promise<string> {
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(password, salt);
 }
 
 // 验证密码
-export function verifyPassword(password: string, storedHash: string): boolean {
-  const [salt, key] = storedHash.split(':');
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-  return key === hash;
+export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  return bcrypt.compare(password, storedHash);
 }
 
-// 初始化管理员密码
-export function initAdminPassword(password: string): boolean {
-  const hash = hashPassword(password);
+// 初始化管理员密码（首次设置）
+export async function initAdminPassword(password: string): Promise<boolean> {
   try {
+    const hash = await hashPassword(password);
     db.prepare(`
-      INSERT OR REPLACE INTO admin_users (username, password_hash)
-      VALUES ('admin', ?)
+      INSERT OR REPLACE INTO admin_users (username, password_hash, initialized)
+      VALUES ('admin', ?, 1)
     `).run(hash);
     return true;
   } catch {
@@ -29,15 +27,25 @@ export function initAdminPassword(password: string): boolean {
   }
 }
 
+// 检查管理员是否已设置密码
+export function isAdminSetup(): boolean {
+  const admin = db.prepare(`SELECT * FROM admin_users WHERE username = ?`).get('admin') as { password_hash: string, initialized: number } | undefined;
+  return admin?.initialized === 1 && admin?.password_hash !== '';
+}
+
 // 管理员登录
-export function adminLogin(username: string, password: string): { success: boolean; token?: string; error?: string } {
-  const admin = db.prepare(`SELECT * FROM admin_users WHERE username = ?`).get(username) as { password_hash: string } | undefined;
+export async function adminLogin(username: string, password: string): Promise<{ success: boolean; token?: string; error?: string }> {
+  const admin = db.prepare(`SELECT * FROM admin_users WHERE username = ?`).get(username) as { password_hash: string, initialized: number } | undefined;
   
   if (!admin) {
     return { success: false, error: 'Invalid credentials' };
   }
 
-  if (verifyPassword(password, admin.password_hash)) {
+  if (!admin.initialized || !admin.password_hash) {
+    return { success: false, error: 'Admin not initialized. Please set password first.' };
+  }
+
+  if (await verifyPassword(password, admin.password_hash)) {
     const token = 'admin_' + crypto.randomBytes(32).toString('hex');
     // 存储 token 到数据库（有效期24小时）
     const expires = Date.now() + 24 * 60 * 60 * 1000;
@@ -53,13 +61,6 @@ export function verifyAdminToken(token: string): boolean {
   if (!token) return false;
   const result = db.prepare(`SELECT * FROM admin_tokens WHERE token = ? AND expires_at > ?`).get(token, Date.now());
   return !!result;
-}
-
-// 验证管理员密码（不生成 token）
-export function verifyAdminPassword(username: string, password: string): boolean {
-  const admin = db.prepare(`SELECT * FROM admin_users WHERE username = ?`).get(username) as { password_hash: string } | undefined;
-  if (!admin) return false;
-  return verifyPassword(password, admin.password_hash);
 }
 
 // 获取所有用户（分页 + 搜索）

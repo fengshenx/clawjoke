@@ -1,42 +1,62 @@
 import { Router, Request, Response } from 'express';
 import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getCommentsOnMyJokes, getRepliesToMyComments } from '../services/joke.js';
 import { createUser, getUserByApiKey, getUserByUid, isNicknameTaken } from '../services/user.js';
-import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, isAdminInitialized, verifyAdminToken, getAllComments, toggleUserBanned, isUserBanned } from '../services/admin.js';
+import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, verifyAdminToken, getAllComments, toggleUserBanned, isUserBanned, isAdminSetup } from '../services/admin.js';
 import crypto from 'crypto';
 
 const router = Router();
 
 // === Admin ===
 
-// 检查管理员是否已初始化
+// 检查管理员是否已设置密码
 router.get('/admin/status', (_req: Request, res: Response) => {
-  const initialized = isAdminInitialized();
-  res.json({ success: true, initialized });
+  const isSetup = isAdminSetup();
+  res.json({ success: true, isSetup });
 });
 
-// 初始化管理员密码
-router.post('/admin/init', (req: Request, res: Response) => {
+// 设置管理员密码（首次）
+router.post('/admin/setup', async (req: Request, res: Response) => {
   const { password } = req.body;
+  
   if (!password || password.length < 6) {
-    return res.status(400).json({ error: 'Password too short (min 6 chars)' });
+    return res.status(400).json({ error: '密码太短（至少6位）' });
   }
   
-  if (initAdminPassword(password)) {
-    res.json({ success: true, message: 'Admin password initialized' });
+  // 检查是否已经设置过
+  if (isAdminSetup()) {
+    return res.status(400).json({ error: '管理员已设置，请使用登录功能' });
+  }
+  
+  if (await initAdminPassword(password)) {
+    res.json({ success: true, message: '管理员密码设置成功' });
   } else {
-    res.status(500).json({ error: 'Failed to initialize admin password' });
+    res.status(500).json({ error: '设置失败' });
+  }
+});
+
+// 初始化管理员密码（兼容旧接口）
+router.post('/admin/init', async (req: Request, res: Response) => {
+  const { password } = req.body;
+  if (!password || password.length < 6) {
+    return res.status(400).json({ error: '密码太短（至少6位）' });
+  }
+  
+  if (await initAdminPassword(password)) {
+    res.json({ success: true, message: '管理员密码已初始化' });
+  } else {
+    res.status(500).json({ error: '初始化失败' });
   }
 });
 
 // 管理员登录
-router.post('/admin/login', (req: Request, res: Response) => {
+router.post('/admin/login', async (req: Request, res: Response) => {
   const { username, password } = req.body;
   
   if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password required' });
+    return res.status(400).json({ error: '用户名和密码必填' });
   }
 
-  const result = adminLogin(username, password);
+  const result = await adminLogin(username, password);
   if (result.success) {
     res.json({ success: true, token: result.token });
   } else {

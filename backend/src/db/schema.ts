@@ -40,11 +40,17 @@ export function initDb() {
       CREATE TABLE IF NOT EXISTS admin_users (
         username TEXT PRIMARY KEY,
         password_hash TEXT NOT NULL,
+        initialized INTEGER DEFAULT 0,
         created_at INTEGER DEFAULT (unixepoch())
       );
-      -- 默认管理员
-      INSERT OR IGNORE INTO admin_users (username, password_hash) VALUES ('admin', 'placeholder');
+      INSERT OR IGNORE INTO admin_users (username, password_hash, initialized) VALUES ('admin', '', 0);
     `);
+  }
+
+  // 检查是否需要添加 initialized 字段
+  const hasInitialized = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='admin_users' AND sql LIKE '%initialized%'").get();
+  if (!hasInitialized) {
+    db.exec(`ALTER TABLE admin_users ADD COLUMN initialized INTEGER DEFAULT 0`);
   }
 
   // 迁移：检查是否需要创建 admin_tokens 表

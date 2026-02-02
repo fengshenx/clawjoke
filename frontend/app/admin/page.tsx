@@ -14,36 +14,96 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'users' | 'jokes' | 'comments'>('users');
 
+  // 检查是否已设置管理员
+  async function checkSetup(): Promise<boolean> {
+    try {
+      const res = await fetch('/api/admin/status');
+      const data = await res.json();
+      return data.isSetup || false;
+    } catch {
+      return false;
+    }
+  }
+
   useEffect(() => {
     // Check for token in localStorage
     const savedToken = localStorage.getItem('adminToken');
-    if (savedToken) {
-      setToken(savedToken);
-      loadUsers(savedToken);
-    }
+    const savedSetup = localStorage.getItem('adminSetupDone');
+    
+    // Check if admin is setup
+    checkSetup().then(isSetup => {
+      if (savedToken && savedSetup === 'true') {
+        setToken(savedToken);
+        loadUsers(savedToken);
+      } else {
+        // Clear stale data
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminSetupDone');
+      }
+    });
   }, []);
 
-  async function login() {
+  // 登录或设置管理员密码
+  async function handleLoginOrSetup() {
     if (!password) return;
     setLoading(true);
     
     try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: 'admin', password })
-      });
-      const data = await res.json();
+      // 先检查是否需要设置
+      const setupRes = await fetch('/api/admin/status');
+      const setupData = await setupRes.json();
+      
+      let res, data;
+      
+      if (setupData.isSetup) {
+        // 已设置，执行登录
+        res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'admin', password })
+        });
+      } else {
+        // 未设置，执行设置
+        res = await fetch('/api/admin/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+      }
+      
+      data = await res.json();
       
       if (data.success) {
-        setToken(data.token);
-        localStorage.setItem('adminToken', data.token);
-        loadUsers(data.token);
+        if (setupData.isSetup) {
+          // 登录成功
+          setToken(data.token);
+          localStorage.setItem('adminToken', data.token);
+          localStorage.setItem('adminSetupDone', 'true');
+          loadUsers(data.token);
+        } else {
+          // 设置成功，转为登录
+          localStorage.setItem('adminSetupDone', 'true');
+          // 自动登录
+          const loginRes = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: 'admin', password })
+          });
+          const loginData = await loginRes.json();
+          if (loginData.success) {
+            setToken(loginData.token);
+            localStorage.setItem('adminToken', loginData.token);
+            loadUsers(loginData.token);
+          } else {
+            alert('设置成功但登录失败，请重新登录');
+            setPassword('');
+          }
+        }
       } else {
-        alert('密码错误！');
+        alert(data.error || '操作失败');
       }
     } catch (e: any) {
-      alert('登录失败: ' + e.message);
+      alert('操作失败: ' + e.message);
     }
     setLoading(false);
   }
@@ -106,6 +166,17 @@ export default function AdminPage() {
 
   // 登录表单
   if (!token) {
+    // 检查是否需要设置管理员
+    const [isSetup, setIsSetup] = useState<boolean | null>(null);
+    
+    useEffect(() => {
+      checkSetup().then(setIsSetup);
+    }, []);
+    
+    if (isSetup === null) {
+      return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F3E9D9' }}>加载中...</div>;
+    }
+    
     return (
       <LocaleProvider>
         <div style={{ 
@@ -123,15 +194,18 @@ export default function AdminPage() {
             width: '100%',
             maxWidth: '400px'
           }}>
-            <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#2C241B' }}>
+            <h1 style={{ textAlign: 'center', marginBottom: '20px', color: '#2C241B' }}>
               🦞 ClawJoke Admin
             </h1>
+            <p style={{ textAlign: 'center', marginBottom: '30px', color: '#666', fontSize: '14px' }}>
+              {isSetup ? '请登录管理员账号' : '首次使用，请设置管理员密码'}
+            </p>
             <input
               type="password"
-              placeholder="请输入管理员密码"
+              placeholder={isSetup ? '请输入密码' : '设置密码（至少6位）'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && login()}
+              onKeyPress={(e) => e.key === 'Enter' && handleLoginOrSetup()}
               style={{
                 width: '100%',
                 padding: '14px 16px',
@@ -143,7 +217,7 @@ export default function AdminPage() {
               }}
             />
             <button
-              onClick={login}
+              onClick={handleLoginOrSetup}
               disabled={loading}
               style={{
                 width: '100%',
@@ -157,7 +231,7 @@ export default function AdminPage() {
                 opacity: loading ? 0.7 : 1
               }}
             >
-              {loading ? '登录中...' : '登录'}
+              {loading ? '处理中...' : (isSetup ? '登录' : '设置密码')}
             </button>
           </div>
         </div>
