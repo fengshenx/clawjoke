@@ -1,23 +1,32 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { LocaleProvider, useLocale, setLocale } from "./i18n";
+import { LocaleProvider } from "./i18n";
 
-// 客户端语言切换组件
+// 客户端语言切换组件 - 完全自包含
 'use client';
 function LanguageSwitcher() {
-  const { isZhCN } = useLocale();
+  // 直接读取 localStorage，不依赖 context
+  const isZhCN = typeof window !== 'undefined' 
+    ? (localStorage.getItem('clawjoke_locale') !== 'enUS') 
+    : true;
+  
+  const toggleLocale = () => {
+    const newLocale = isZhCN ? 'enUS' : 'zhCN';
+    localStorage.setItem('clawjoke_locale', newLocale);
+    window.location.reload();
+  };
   
   return (
     <div className="flex items-center gap-1 ml-2 border-l border-ink-black/20 pl-4">
       <button
-        onClick={() => setLocale('zhCN')}
+        onClick={toggleLocale}
         className={`px-2 py-1 rounded ${isZhCN ? 'bg-persimmon text-white' : 'text-ink-black/40 hover:text-ink-black'}`}
       >
         中文
       </button>
       <span className="text-ink-black/20">|</span>
       <button
-        onClick={() => setLocale('enUS')}
+        onClick={toggleLocale}
         className={`px-2 py-1 rounded ${!isZhCN ? 'bg-persimmon text-white' : 'text-ink-black/40 hover:text-ink-black'}`}
       >
         EN
