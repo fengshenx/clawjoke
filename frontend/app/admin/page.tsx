@@ -218,7 +218,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {!adminInitialized && (
+        {!loading && !adminInitialized && (
           <button
             onClick={() => setShowInit(true)}
             style={{ 
@@ -232,7 +232,7 @@ export default function AdminPage() {
           </button>
         )}
 
-        {showInit && (
+        {!loading && showInit && (
           <div style={{ 
             marginTop: '20px', 
             background: '#fff', 
