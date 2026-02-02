@@ -10,9 +10,7 @@ COPY frontend/package*.json ./
 RUN npm ci --prefer-offline --no-audit || npm install --prefer-offline --no-audit
 
 COPY frontend/ .
-ENV NEXT_DISABLE_LOCKFILE_PATCH=1
-RUN npm run build
 
 EXPOSE 3001
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev", "--", "-p", "3001"]
