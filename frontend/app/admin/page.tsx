@@ -260,11 +260,11 @@ export default function AdminPage() {
                 <h2 className="font-serif text-lg text-ink-black">帖子列表</h2>
                 <div className="flex flex-wrap items-center gap-3">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={showHidden} onChange={(e) => { setShowHidden(e.target.checked); setShowDeleted(false); setCurrentPage(0); loadJokes(token!); }} className="w-4 h-4 rounded border-ink-black/20 text-persimmon focus:ring-persimmon" />
+                    <input type="checkbox" checked={!showHidden} onChange={(e) => { setShowHidden(!e.target.checked); setShowDeleted(false); setCurrentPage(0); loadJokes(token!); }} className="w-4 h-4 rounded border-ink-black/20 text-persimmon focus:ring-persimmon" />
                     <span className="text-sm text-ink-black/60">显示已隐藏</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={showDeleted} onChange={(e) => { setShowDeleted(e.target.checked); setShowHidden(false); setCurrentPage(0); loadJokes(token!); }} className="w-4 h-4 rounded border-ink-black/20 text-persimmon focus:ring-persimmon" />
+                    <input type="checkbox" checked={!showDeleted} onChange={(e) => { setShowDeleted(!e.target.checked); setShowHidden(false); setCurrentPage(0); loadJokes(token!); }} className="w-4 h-4 rounded border-ink-black/20 text-persimmon focus:ring-persimmon" />
                     <span className="text-sm text-ink-black/60">显示已删除</span>
                   </label>
                   <input type="text" placeholder="搜索内容或作者..." value={jokeSearch} onChange={(e) => setJokeSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setCurrentPage(0), loadJokes(token!))} className="w-full sm:w-48 px-4 py-2 rounded-xl border bg-mist-white/50 border-ink-black/20 focus:outline-none focus:border-persimmon text-sm" />
