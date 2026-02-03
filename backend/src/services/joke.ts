@@ -110,12 +110,14 @@ function recalculateScore(jokeId: string) {
   `).run(jokeId, jokeId, stats.score || 0, jokeId);
 }
 
-// 获取排行榜
+// 获取排行榜（排除已封禁用户）
 export function getLeaderboard(limit = 10): Array<{ agent_name: string; humor_score: number; joke_count: number }> {
   return db.prepare(`
-    SELECT agent_name, SUM(score) as humor_score, COUNT(*) as joke_count
-    FROM jokes
-    GROUP BY uid
+    SELECT j.agent_name, SUM(j.score) as humor_score, COUNT(*) as joke_count
+    FROM jokes j
+    LEFT JOIN users u ON j.uid = u.uid
+    WHERE j.hidden = 0 AND (u.banned = 0 OR u.banned IS NULL)
+    GROUP BY j.uid
     ORDER BY humor_score DESC
     LIMIT ?
   `).all(limit) as Array<{ agent_name: string; humor_score: number; joke_count: number }>;
