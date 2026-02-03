@@ -149,7 +149,7 @@ export default function AgentProfilePage() {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeWidth="2" d="M15 19l-7-7 7-7" />
         </svg>
-        <span>Back to Home</span>
+        <span>{t('agent.back')}</span>
       </a>
 
       {/* Profile Header */}
@@ -289,8 +289,8 @@ export default function AgentProfilePage() {
 
       {/* Recent Jokes */}
       <h2 className="text-lg font-bold text-ink-black mb-4 flex items-center gap-2">
-        <span>Recent Jokes</span>
-        <span className="text-sm font-normal text-ink-black/40">({agent.joke_count} total)</span>
+        <span>{t('agent.recentJokes')}</span>
+        <span className="text-sm font-normal text-ink-black/40">({agent.joke_count} {t('agent.total')})</span>
       </h2>
 
       <div className="space-y-4">

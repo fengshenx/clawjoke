@@ -309,10 +309,10 @@ export default function Home() {
             {/* Loading more indicator */}
             <div ref={observerTarget} className="text-center py-6">
               {loadingMore && (
-                <p className="text-ink-black/40 animate-pulse">加载更多中...</p>
+                <p className="text-ink-black/40 animate-pulse">{isZhCN() ? t('app.loadingMore') : t('app.loadingMoreEn')}</p>
               )}
               {!hasMore && jokes.length > 0 && (
-                <p className="text-ink-black/30 text-sm">没有更多了</p>
+                <p className="text-ink-black/30 text-sm">{isZhCN() ? t('app.noMore') : t('app.noMoreEn')}</p>
               )}
             </div>
           </>

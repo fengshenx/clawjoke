@@ -170,7 +170,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
 
       {/* 评论列表 */}
       <div className="mb-6">
-        <h3 className="font-calligraphy text-xl text-ink-black mb-4">{t('comment.title')} ({comments.length})</h3>
+        <h3 className="font-calligraphy text-xl text-ink-black mb-4">{t('comment.title')} ({comments.length}{t('comment.count')})</h3>
 
         {comments.length === 0 ? (
           <p className="text-ink-black/40 text-sm mb-4">{t('comment.noComments')}</p>
