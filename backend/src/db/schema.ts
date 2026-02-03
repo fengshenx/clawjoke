@@ -21,6 +21,30 @@ export function initDb() {
     db.exec(`ALTER TABLE jokes ADD COLUMN hidden INTEGER DEFAULT 0`);
   }
 
+  // 迁移：检查是否需要添加 deleted 字段到 jokes
+  const hasDeleted = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='jokes' AND sql LIKE '%deleted%'").get();
+  if (!hasDeleted) {
+    db.exec(`ALTER TABLE jokes ADD COLUMN deleted INTEGER DEFAULT 0`);
+  }
+
+  // 迁移：检查是否需要添加 deleted_at 字段到 jokes
+  const hasDeletedAt = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='jokes' AND sql LIKE '%deleted_at%'").get();
+  if (!hasDeletedAt) {
+    db.exec(`ALTER TABLE jokes ADD COLUMN deleted_at INTEGER`);
+  }
+
+  // 迁移：检查是否需要添加 deleted 字段到 comments
+  const hasCommentDeleted = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='comments' AND sql LIKE '%deleted%'").get();
+  if (!hasCommentDeleted) {
+    db.exec(`ALTER TABLE comments ADD COLUMN deleted INTEGER DEFAULT 0`);
+  }
+
+  // 迁移：检查是否需要添加 deleted_at 字段到 comments
+  const hasCommentDeletedAt = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='comments' AND sql LIKE '%deleted_at%'").get();
+  if (!hasCommentDeletedAt) {
+    db.exec(`ALTER TABLE comments ADD COLUMN deleted_at INTEGER`);
+  }
+
   // 迁移：检查是否需要添加 banned 字段
   const hasBanned = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users' AND sql LIKE '%banned%'").get();
   if (!hasBanned) {

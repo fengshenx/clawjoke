@@ -165,6 +165,8 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'users' | 'jokes' | 'comments' | 'settings'>('users');
   const [jokes, setJokes] = useState<any[]>([]);
   const [showHidden, setShowHidden] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [showDeletedComments, setShowDeletedComments] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
   const [isSetup, setIsSetup] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -335,7 +337,7 @@ export default function AdminPage() {
   async function loadJokes(authToken: string) {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/jokes?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(search)}&hidden=${showHidden}`, {
+      const res = await fetch(`/api/admin/jokes?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(search)}&hidden=${showHidden}&deleted=${showDeleted}`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
       const data = await res.json();
@@ -357,7 +359,7 @@ export default function AdminPage() {
   async function loadComments(authToken: string) {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/comments?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(search)}`, {
+      const res = await fetch(`/api/admin/comments?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(search)}&deleted=${showDeletedComments}`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
       const data = await res.json();
@@ -671,19 +673,34 @@ export default function AdminPage() {
               boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
             }}>
               {/* Filter toggle */}
-              <div style={{ padding: '16px 24px', borderBottom: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ padding: '16px 24px', borderBottom: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: '24px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={showHidden}
                     onChange={(e) => {
                       setShowHidden(e.target.checked);
+                      setShowDeleted(false); // Hide deleted when showing hidden
                       setCurrentPage(0);
                       if (token) loadJokes(token);
                     }}
                     style={{ width: '18px', height: '18px' }}
                   />
                   <span style={{ fontSize: '14px', color: '#666' }}>显示已隐藏的帖子</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={showDeleted}
+                    onChange={(e) => {
+                      setShowDeleted(e.target.checked);
+                      setShowHidden(false); // Hide hidden when showing deleted
+                      setCurrentPage(0);
+                      if (token) loadJokes(token);
+                    }}
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                  <span style={{ fontSize: '14px', color: '#666' }}>显示已删除的帖子</span>
                 </label>
               </div>
               
@@ -737,28 +754,32 @@ export default function AdminPage() {
                         borderRadius: '20px',
                         fontSize: '12px',
                         fontWeight: '500',
-                        background: joke.hidden ? '#FFEBEE' : '#E8F5E9',
-                        color: joke.hidden ? '#C62828' : '#2E7D32'
+                        background: joke.deleted ? '#F5F5F5' : (joke.hidden ? '#FFEBEE' : '#E8F5E9'),
+                        color: joke.deleted ? '#999' : (joke.hidden ? '#C62828' : '#2E7D32')
                       }}>
-                        {joke.hidden ? '已隐藏' : '正常'}
+                        {joke.deleted ? '已删除' : (joke.hidden ? '已隐藏' : '正常')}
                       </span>
                     </div>
                     <div>
-                      <button
-                        onClick={() => toggleJokeHidden(joke.id, !joke.hidden)}
-                        style={{
-                          padding: '8px 16px',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          background: joke.hidden ? '#E8F5E9' : '#FFEBEE',
-                          color: joke.hidden ? '#2E7D32' : '#C62828'
-                        }}
-                      >
-                        {joke.hidden ? '显示' : '隐藏'}
-                      </button>
+                      {joke.deleted ? (
+                        <span style={{ color: '#999', fontSize: '13px' }}>已删除</span>
+                      ) : (
+                        <button
+                          onClick={() => toggleJokeHidden(joke.id, !joke.hidden)}
+                          style={{
+                            padding: '8px 16px',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            background: joke.hidden ? '#E8F5E9' : '#FFEBEE',
+                            color: joke.hidden ? '#2E7D32' : '#C62828'
+                          }}
+                        >
+                          {joke.hidden ? '显示' : '隐藏'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -775,9 +796,26 @@ export default function AdminPage() {
               overflow: 'hidden',
               boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
             }}>
+              {/* Filter toggle */}
+              <div style={{ padding: '16px 24px', borderBottom: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: '24px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={showDeletedComments}
+                    onChange={(e) => {
+                      setShowDeletedComments(e.target.checked);
+                      setCurrentPage(0);
+                      if (token) loadComments(token);
+                    }}
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                  <span style={{ fontSize: '14px', color: '#666' }}>显示已删除的评论</span>
+                </label>
+              </div>
+
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 80px 80px 100px',
+                gridTemplateColumns: '1fr 1fr 80px 80px 80px 100px',
                 padding: '16px 24px',
                 background: '#F8F4F0',
                 fontWeight: '600',
@@ -788,6 +826,7 @@ export default function AdminPage() {
                 <div>帖子内容</div>
                 <div>👍</div>
                 <div>👎</div>
+                <div>状态</div>
                 <div>时间</div>
               </div>
               
@@ -799,7 +838,7 @@ export default function AdminPage() {
                 comments.map(comment => (
                   <div key={comment.id} style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 80px 80px 100px',
+                    gridTemplateColumns: '1fr 1fr 80px 80px 80px 100px',
                     padding: '16px 24px',
                     borderBottom: '1px solid #F0F0F0',
                     alignItems: 'center',
@@ -827,6 +866,16 @@ export default function AdminPage() {
                     </div>
                     <div style={{ color: '#666' }}>{comment.upvotes}</div>
                     <div style={{ color: '#666' }}>{comment.downvotes}</div>
+                    <div style={{ 
+                      fontSize: '12px',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontWeight: '500',
+                      background: comment.deleted ? '#F5F5F5' : '#E8F5E9',
+                      color: comment.deleted ? '#999' : '#2E7D32'
+                    }}>
+                      {comment.deleted ? '已删除' : '正常'}
+                    </div>
                     <div style={{ color: '#999', fontSize: '12px' }}>
                       {new Date(comment.created_at * 1000).toLocaleDateString('zh-CN')}
                     </div>

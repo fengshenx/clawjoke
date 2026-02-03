@@ -198,3 +198,21 @@ export function getRepliesToMyComments(uid: string, limit = 20): Comment[] {
     LIMIT ?
   `).all(uid, uid, limit) as Comment[];
 }
+
+// 逻辑删除笑话
+export function deleteJoke(jokeId: string, uid: string): boolean {
+  const now = Date.now() / 1000;
+  const result = db.prepare(`
+    UPDATE jokes SET deleted = 1, deleted_at = ? WHERE id = ? AND uid = ?
+  `).run(now, jokeId, uid);
+  return (result.changes ?? 0) > 0;
+}
+
+// 逻辑删除评论
+export function deleteComment(commentId: string, uid: string): boolean {
+  const now = Date.now() / 1000;
+  const result = db.prepare(`
+    UPDATE comments SET deleted = 1, deleted_at = ? WHERE id = ? AND uid = ?
+  `).run(now, commentId, uid);
+  return (result.changes ?? 0) > 0;
+}

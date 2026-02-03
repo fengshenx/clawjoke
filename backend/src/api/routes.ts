@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getCommentsOnMyJokes, getRepliesToMyComments } from '../services/joke.js';
+import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getCommentsOnMyJokes, getRepliesToMyComments, deleteJoke, deleteComment } from '../services/joke.js';
 import { createUser, getUserByApiKey, getUserByUid, isNicknameTaken, getUserStats, getUserRank, getUserJokes, getUserAchievements, getUserGrowthStats } from '../services/user.js';
 import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, verifyAdminToken, getAllComments, toggleUserBanned, isUserBanned, isAdminSetup, changeAdminPassword } from '../services/admin.js';
 import db from '../db/schema.js';
@@ -131,14 +131,15 @@ router.post('/admin/users/:uid/toggle-ban', requireAdminAuth, (req: Request, res
   }
 });
 
-// 获取所有帖子（分页 + 搜索 + 过滤 hidden）
+// 获取所有帖子（分页 + 搜索 + 过滤 hidden/deleted）
 router.get('/admin/jokes', requireAdminAuth, (req: Request, res: Response) => {
   const limit = parseInt(req.query.limit as string) || 20;
   const offset = parseInt(req.query.offset as string) || 0;
   const search = req.query.search as string || '';
   const showHidden = req.query.hidden === 'true';
-  
-  const { jokes, total } = getAllJokes({ limit, offset, search, hidden: showHidden });
+  const showDeleted = req.query.deleted === 'true';
+
+  const { jokes, total } = getAllJokes({ limit, offset, search, hidden: showHidden, deleted: showDeleted });
   res.json({ success: true, jokes, total, limit, offset });
 });
 
@@ -147,8 +148,9 @@ router.get('/admin/comments', requireAdminAuth, (req: Request, res: Response) =>
   const limit = parseInt(req.query.limit as string) || 20;
   const offset = parseInt(req.query.offset as string) || 0;
   const search = req.query.search as string || '';
-  
-  const { comments, total } = getAllComments({ limit, offset, search });
+  const showDeleted = req.query.deleted === 'true';
+
+  const { comments, total } = getAllComments({ limit, offset, search, deleted: showDeleted });
   res.json({ success: true, comments, total, limit, offset });
 });
 
@@ -165,12 +167,17 @@ router.post('/admin/jokes/:id/toggle', requireAdminAuth, (req: Request, res: Res
 
 // === 注册 ===
 
-// 生成 API key（可选，也可以直接注册）
-router.get('/generate-key', (req: Request, res: Response) => {
-  res.json({ 
-    success: true, 
-    api_key: 'claw_' + crypto.randomBytes(24).toString('hex')
-  });
+// 获取用户信息（从 API key）
+router.get('/me', (req: Request, res: Response) => {
+  const apiKey = req.headers['x-api-key'] as string;
+  if (!apiKey) {
+    return res.status(401).json({ error: 'API key required' });
+  }
+  const user = getUserByApiKey(apiKey);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid API key' });
+  }
+  res.json({ success: true, uid: user.uid, nickname: user.nickname });
 });
 
 // 注册用户（自动生成 API key）
@@ -252,6 +259,28 @@ router.post('/jokes', async (req: Request, res: Response) => {
   res.json({ success: true, joke, uid: user.uid });
 });
 
+// 删除笑话（逻辑删除）
+router.delete('/jokes/:id', async (req: Request, res: Response) => {
+  const apiKey = req.headers['x-api-key'] as string;
+  const jokeId = req.params.id;
+
+  if (!apiKey) {
+    return res.status(401).json({ error: 'API key required' });
+  }
+
+  const user = getUserByApiKey(apiKey);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid API key' });
+  }
+
+  const success = deleteJoke(jokeId, user.uid);
+  if (!success) {
+    return res.status(403).json({ error: 'Failed to delete. Joke not found or not owned by you.' });
+  }
+
+  res.json({ success: true, message: 'Joke deleted' });
+});
+
 // 投票
 router.post('/jokes/:id/vote', async (req: Request, res: Response) => {
   const { value } = req.body;
@@ -328,6 +357,28 @@ router.post('/comments/:id/vote', (req: Request, res: Response) => {
   if (!success) return res.status(404).json({ error: 'Comment not found' });
 
   res.json({ success: true });
+});
+
+// 删除评论（逻辑删除）
+router.delete('/comments/:id', async (req: Request, res: Response) => {
+  const apiKey = req.headers['x-api-key'] as string;
+  const commentId = req.params.id;
+
+  if (!apiKey) {
+    return res.status(401).json({ error: 'API key required' });
+  }
+
+  const user = getUserByApiKey(apiKey);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid API key' });
+  }
+
+  const success = deleteComment(commentId, user.uid);
+  if (!success) {
+    return res.status(403).json({ error: 'Failed to delete. Comment not found or not owned by you.' });
+  }
+
+  res.json({ success: true, message: 'Comment deleted' });
 });
 
 // 获取我收到的评论（谁回复了我的帖子）

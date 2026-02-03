@@ -34,6 +34,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [jokeId, setJokeId] = useState('');
+  const [currentUser, setCurrentUser] = useState<{ uid: string; nickname: string } | null>(null);
 
   useEffect(() => {
     // 获取 jokeId 从 params
@@ -59,6 +60,32 @@ export default function JokePage({ params }: { params: { id: string } }) {
     }
     setLoading(false);
   }
+
+  async function fetchUser() {
+    if (!apiKey) {
+      setCurrentUser(null);
+      return;
+    }
+    try {
+      const res = await fetch('/api/me', {
+        method: 'GET',
+        headers: { 'X-API-Key': apiKey }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCurrentUser({ uid: data.uid, nickname: data.nickname });
+      } else {
+        setCurrentUser(null);
+      }
+    } catch (e) {
+      console.error('Failed to fetch user', e);
+      setCurrentUser(null);
+    }
+  }
+
+  useEffect(() => {
+    fetchUser();
+  }, [apiKey]);
 
   async function fetchComments() {
     try {
@@ -93,6 +120,42 @@ export default function JokePage({ params }: { params: { id: string } }) {
       fetchComments();
     } catch (e) {
       console.error('Vote failed', e);
+    }
+  }
+
+  async function handleDeleteJoke() {
+    if (!confirm(t('joke.deleteConfirm'))) return;
+    try {
+      const res = await fetch(`/api/jokes/${jokeId}`, {
+        method: 'DELETE',
+        headers: { 'X-API-Key': apiKey },
+      });
+      const data = await res.json();
+      if (data.success) {
+        router.push('/');
+      } else {
+        alert(data.error || t('joke.deleteFailed'));
+      }
+    } catch (e) {
+      console.error('Delete failed', e);
+    }
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    if (!confirm(t('comment.deleteConfirm'))) return;
+    try {
+      const res = await fetch(`/api/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: { 'X-API-Key': apiKey },
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchComments();
+      } else {
+        alert(data.error || t('comment.deleteFailed'));
+      }
+    } catch (e) {
+      console.error('Delete failed', e);
     }
   }
 
@@ -149,6 +212,15 @@ export default function JokePage({ params }: { params: { id: string } }) {
             <span className="text-ink-black/40 text-xs">
               {new Date(joke.created_at * 1000).toLocaleString(isZhCN() ? 'zh-CN' : 'en-US')}
             </span>
+            {/* Delete button - only show when user owns this joke */}
+            {currentUser && currentUser.uid === joke.uid && (
+              <button
+                onClick={handleDeleteJoke}
+                className="text-red-400 hover:text-red-500 text-xs px-2 py-1 rounded border border-red-200 hover:border-red-300 transition"
+              >
+                {t('joke.delete')}
+              </button>
+            )}
           </div>
           <div className="flex items-center justify-between sm:justify-end gap-4">
             <button
@@ -187,6 +259,15 @@ export default function JokePage({ params }: { params: { id: string } }) {
                       <span className="text-ink-black/30 text-xs">
                         {new Date(comment.created_at * 1000).toLocaleString(isZhCN() ? 'zh-CN' : 'en-US')}
                       </span>
+                      {/* Delete button - only show when user owns this comment */}
+                      {currentUser && currentUser.uid === comment.uid && (
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          className="text-red-400 hover:text-red-500 text-xs px-2 py-0.5 rounded border border-red-200 hover:border-red-300 transition"
+                        >
+                          {t('comment.delete')}
+                        </button>
+                      )}
                     </div>
                     <p className="mt-1 text-ink-black/70">{comment.content}</p>
                   </div>

@@ -259,6 +259,14 @@ const translations: Record<Locale, Record<string, string>> = {
     'agent.score': 'Score',
     'agent.comments': 'Comments',
     'agent.jokes': 'Jokes',
+    'joke.delete': '删除',
+    'joke.deleteConfirm': '确定要删除这条笑话吗？',
+    'joke.deleteSuccess': '删除成功',
+    'joke.deleteFailed': '删除失败',
+    'comment.delete': '删除',
+    'comment.deleteConfirm': '确定要删除这条评论吗？',
+    'comment.deleteSuccess': '删除成功',
+    'comment.deleteFailed': '删除失败',
   },
 };
 
