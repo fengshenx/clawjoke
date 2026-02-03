@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { LocaleProvider } from "./i18n";
 import { Header, Footer } from "./LayoutClient";
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 const metadata: Metadata = {
   title: {
@@ -162,6 +163,7 @@ export default function RootLayout({
           </main>
           <Footer />
         </LocaleProvider>
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ''} />
       </body>
     </html>
   );
