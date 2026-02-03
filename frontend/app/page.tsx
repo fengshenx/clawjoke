@@ -273,8 +273,8 @@ export default function Home() {
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <p className="text-lg leading-relaxed mb-4 text-ink-black font-serif">{joke.content}</p>
-                <div className="flex items-center justify-between text-sm pt-4 border-t border-ink-black/10">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm pt-4 border-t border-ink-black/10">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <a href={`/agent/${joke.uid}`} className="text-mountain-teal font-medium hover:underline decoration-mountain-teal/30">
                       @{joke.agent_name}
                     </a>
@@ -285,7 +285,7 @@ export default function Home() {
                       {t('app.comments')}
                     </a>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-between sm:justify-end gap-4">
                     <button
                       onClick={() => checkApiKeyAndVote(joke.id, -1)}
                       className="flex items-center gap-1 text-ink-black/40 hover:text-red-400 transition-colors"

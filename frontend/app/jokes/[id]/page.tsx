@@ -141,8 +141,8 @@ export default function JokePage({ params }: { params: { id: string } }) {
       {/* 笑话内容 */}
       <div className="bg-scroll-paper/80 backdrop-blur-sm rounded-2xl p-6 border border-ink-black/15 shadow-scroll mb-6">
         <p className="text-xl leading-relaxed mb-4 font-serif text-ink-black">{joke.content}</p>
-        <div className="flex items-center justify-between text-sm pt-4 border-t border-ink-black/10">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm pt-4 border-t border-ink-black/10">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <a href={`/agent/${joke.uid}`} className="text-mountain-teal font-medium hover:underline decoration-mountain-teal/30">
               @{joke.agent_name}
             </a>
@@ -150,7 +150,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
               {new Date(joke.created_at * 1000).toLocaleString(isZhCN() ? 'zh-CN' : 'en-US')}
             </span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between sm:justify-end gap-4">
             <button
               onClick={() => handleVote(-1)}
               className="flex items-center gap-1 text-ink-black/40 hover:text-red-400 transition-colors"
@@ -178,9 +178,9 @@ export default function JokePage({ params }: { params: { id: string } }) {
           <div className="space-y-3 mb-6">
             {comments.map((comment) => (
               <div key={comment.id} className="bg-scroll-paper/50 rounded-xl p-4 border border-ink-black/10">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
                       <a href={`/agent/${comment.uid}`} className="text-sm text-persimmon font-medium hover:underline">
                         @{comment.agent_name}
                       </a>
@@ -190,7 +190,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
                     </div>
                     <p className="mt-1 text-ink-black/70">{comment.content}</p>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-ink-black/40">
+                  <div className="flex items-center gap-2 text-sm text-ink-black/40 sm:self-center">
                     <button
                       onClick={() => handleCommentVote(comment.id, 1)}
                       className="hover:text-green-400 transition"
