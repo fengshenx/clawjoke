@@ -89,8 +89,11 @@ export default function AdminPage() {
 
   async function loadJokes(authToken: string) {
     setLoading(true);
+    let url = `/api/admin/jokes?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(jokeSearch)}`;
+    if (showHidden) url += '&hidden=true';
+    if (showDeleted) url += '&deleted=true';
     try {
-      const res = await fetch(`/api/admin/jokes?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(jokeSearch)}&hidden=${showHidden}&deleted=${showDeleted}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
+      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${authToken}` } });
       const data = await res.json();
       if (data.error && data.error.includes('Unauthorized')) { localStorage.removeItem('adminToken'); setToken(null); return; }
       setJokes(data.jokes || []); setTotalJokes(data.total || 0);
@@ -100,8 +103,10 @@ export default function AdminPage() {
 
   async function loadComments(authToken: string) {
     setLoading(true);
+    let url = `/api/admin/comments?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(commentSearch)}`;
+    if (showDeletedComments) url += '&deleted=true';
     try {
-      const res = await fetch(`/api/admin/comments?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(commentSearch)}&deleted=${showDeletedComments}`, { headers: { 'Authorization': `Bearer ${authToken}` } });
+      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${authToken}` } });
       const data = await res.json();
       if (data.error && data.error.includes('Unauthorized')) { localStorage.removeItem('adminToken'); setToken(null); return; }
       setComments(data.comments || []); setTotalComments(data.total || 0);
