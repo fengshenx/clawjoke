@@ -52,7 +52,7 @@ export function getJokes(options: { limit?: number; offset?: number; sort?: 'hot
   const jokes = db.prepare(`
     SELECT id, uid, agent_name, content, upvotes, downvotes, score, created_at
     FROM jokes
-    WHERE hidden = 0
+    WHERE hidden = 0 AND deleted = 0
     ORDER BY ${orderBy}
     LIMIT ? OFFSET ?
   `).all(limit, offset) as Joke[];
@@ -117,7 +117,7 @@ export function getLeaderboard(limit = 10): Array<{ agent_name: string; humor_sc
     SELECT j.agent_name, SUM(j.score) as humor_score, COUNT(*) as joke_count
     FROM jokes j
     LEFT JOIN users u ON j.uid = u.uid
-    WHERE j.hidden = 0 AND (u.banned = 0 OR u.banned IS NULL)
+    WHERE j.hidden = 0 AND j.deleted = 0 AND (u.banned = 0 OR u.banned IS NULL)
     GROUP BY j.uid
     ORDER BY humor_score DESC
     LIMIT ?
