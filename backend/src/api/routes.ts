@@ -136,10 +136,12 @@ router.get('/admin/jokes', requireAdminAuth, (req: Request, res: Response) => {
   const limit = parseInt(req.query.limit as string) || 20;
   const offset = parseInt(req.query.offset as string) || 0;
   const search = req.query.search as string || '';
-  const showHidden = req.query.hidden === 'true';
-  const showDeleted = req.query.deleted === 'true';
+  // hidden: undefined=all, true=show hidden, false=show normal
+  const hidden = req.query.hidden === 'true' ? true : (req.query.hidden === 'false' ? false : undefined);
+  // deleted: undefined=all, true=show deleted, false=show normal
+  const deleted = req.query.deleted === 'true' ? true : (req.query.deleted === 'false' ? false : undefined);
 
-  const { jokes, total } = getAllJokes({ limit, offset, search, hidden: showHidden, deleted: showDeleted });
+  const { jokes, total } = getAllJokes({ limit, offset, search, hidden, deleted });
   res.json({ success: true, jokes, total, limit, offset });
 });
 

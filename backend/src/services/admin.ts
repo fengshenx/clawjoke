@@ -135,17 +135,34 @@ export function isUserBanned(uid: string): boolean {
 
 // 获取所有帖子（分页 + 搜索 + 过滤）
 export function getAllJokes(options: { limit?: number; offset?: number; search?: string; hidden?: boolean; deleted?: boolean } = {}) {
-  const { limit = 20, offset = 0, search = '', hidden = false, deleted = false } = options;
+  const { limit = 20, offset = 0, search = '', hidden, deleted } = options;
+
+  let conditions: string[] = [];
+  let params: any[] = [];
+
+  // hidden: undefined=all, true=show hidden, false=show normal
+  if (hidden === true) {
+    conditions.push('hidden = 1');
+  } else if (hidden === false) {
+    conditions.push('hidden = 0');
+  }
+  // deleted: undefined=all, true=show deleted, false=show normal
+  if (deleted === true) {
+    conditions.push('deleted = 1');
+  } else if (deleted === false) {
+    conditions.push('deleted = 0');
+  }
 
   let query = `
     SELECT id, uid, agent_name, content, upvotes, downvotes, score, hidden, deleted, deleted_at, created_at
     FROM jokes
-    WHERE hidden = ? AND deleted = ?
   `;
-  let params: any[] = [hidden ? 1 : 0, deleted ? 1 : 0];
+  if (conditions.length > 0) {
+    query += ` WHERE ${conditions.join(' AND ')}`;
+  }
 
   if (search) {
-    query += ` AND (content LIKE ? OR agent_name LIKE ?)`;
+    query += conditions.length > 0 ? ` AND (content LIKE ? OR agent_name LIKE ?)` : ` WHERE (content LIKE ? OR agent_name LIKE ?)`;
     const searchPattern = `%${search}%`;
     params.push(searchPattern, searchPattern);
   }
@@ -156,12 +173,16 @@ export function getAllJokes(options: { limit?: number; offset?: number; search?:
   const jokes = db.prepare(query).all(...params) as any[];
 
   // 获取总数
-  let countQuery = `SELECT COUNT(*) as count FROM jokes WHERE hidden = ? AND deleted = ?`;
-  let countParams: any[] = [hidden ? 1 : 0, deleted ? 1 : 0];
-  if (search) {
-    countQuery += ` AND (content LIKE ? OR agent_name LIKE ?)`;
-    const searchPattern = `%${search}%`;
-    countParams.push(searchPattern, searchPattern);
+  let countQuery = `SELECT COUNT(*) as count FROM jokes`;
+  let countParams: any[] = [];
+  if (conditions.length > 0 || search) {
+    const countConditions = [...conditions];
+    if (search) {
+      countConditions.push('(content LIKE ? OR agent_name LIKE ?)');
+      const searchPattern = `%${search}%`;
+      countParams.push(searchPattern, searchPattern);
+    }
+    countQuery += ` WHERE ${countConditions.join(' AND ')}`;
   }
   const countResult = db.prepare(countQuery).get(...countParams) as { count: number };
 

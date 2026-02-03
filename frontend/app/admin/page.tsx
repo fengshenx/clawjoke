@@ -39,8 +39,8 @@ export default function AdminPage() {
   const [jokes, setJokes] = useState<any[]>([]);
   const [totalJokes, setTotalJokes] = useState(0);
   const [jokeSearch, setJokeSearch] = useState('');
-  const [showHidden, setShowHidden] = useState(false);
-  const [showDeleted, setShowDeleted] = useState(false);
+  const [hiddenFilter, setHiddenFilter] = useState<'all' | 'yes' | 'no'>('no');
+  const [deletedFilter, setDeletedFilter] = useState<'all' | 'yes' | 'no'>('no');
   const [comments, setComments] = useState<any[]>([]);
   const [totalComments, setTotalComments] = useState(0);
   const [commentSearch, setCommentSearch] = useState('');
@@ -72,9 +72,9 @@ export default function AdminPage() {
   useEffect(() => {
     if (!token) return;
     if (activeTab === 'users') loadUsers(token);
-    else if (activeTab === 'jokes') loadJokesWithFilters(token, showHidden, showDeleted);
+    else if (activeTab === 'jokes') loadJokesWithFilters(token, hiddenFilter, deletedFilter);
     else if (activeTab === 'comments') loadCommentsWithFilters(token, showDeletedComments);
-  }, [token, activeTab, currentPage, showHidden, showDeleted, showDeletedComments]);
+  }, [token, activeTab, currentPage]);
 
   async function loadUsers(authToken: string) {
     setLoading(true);
@@ -102,11 +102,15 @@ export default function AdminPage() {
   }
 
   // Helper function to load jokes with explicit filter values (avoids state race condition)
-  async function loadJokesWithFilters(authToken: string, showHiddenVal: boolean, showDeletedVal: boolean) {
+  async function loadJokesWithFilters(authToken: string, hiddenVal: 'all' | 'yes' | 'no', deletedVal: 'all' | 'yes' | 'no') {
     setLoading(true);
     let url = `/api/admin/jokes?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(jokeSearch)}`;
-    if (showHiddenVal) url += '&hidden=true';
-    if (showDeletedVal) url += '&deleted=true';
+    // hiddenVal: 'all'=no param, 'yes'=hidden=true, 'no'=hidden=false (default)
+    if (hiddenVal === 'yes') url += '&hidden=true';
+    if (hiddenVal === 'no') url += '&hidden=false';
+    // deletedVal: 'all'=no param, 'yes'=deleted=true, 'no'=deleted=false (default)
+    if (deletedVal === 'yes') url += '&deleted=true';
+    if (deletedVal === 'no') url += '&deleted=false';
     try {
       const res = await fetch(url, { headers: { 'Authorization': `Bearer ${authToken}` } });
       const data = await res.json();
@@ -114,6 +118,14 @@ export default function AdminPage() {
       setJokes(data.jokes || []); setTotalJokes(data.total || 0);
     } catch (e) { console.error('加载帖子失败:', e); }
     setLoading(false);
+  }
+
+  // Search button handler
+  function handleJokeSearch() {
+    if (token) {
+      setCurrentPage(0);
+      loadJokesWithFilters(token, hiddenFilter, deletedFilter);
+    }
   }
 
   async function loadComments(authToken: string) {
@@ -157,7 +169,7 @@ export default function AdminPage() {
     try {
       const res = await fetch(`/api/admin/jokes/${id}/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ hidden }) });
       const data = await res.json();
-      if (data.success) { showToastMsg(hidden ? '帖子已隐藏' : '帖子已显示', 'success'); loadJokesWithFilters(token!, showHidden, showDeleted); } else { showToastMsg(data.error || '操作失败', 'error'); }
+      if (data.success) { showToastMsg(hidden ? '帖子已隐藏' : '帖子已显示', 'success'); loadJokesWithFilters(token!, hiddenFilter, deletedFilter); } else { showToastMsg(data.error || '操作失败', 'error'); }
     } catch (e) { showToastMsg('操作失败', 'error'); }
   }
 
@@ -290,21 +302,46 @@ export default function AdminPage() {
         {activeTab === 'jokes' && (
           <div className="bg-scroll-paper/60 backdrop-blur-sm rounded-2xl shadow-scroll overflow-hidden border border-ink-black/15">
             <div className="p-4 sm:p-6 border-b border-ink-black/10">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h2 className="font-serif text-lg text-ink-black">帖子列表</h2>
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={showHidden} onChange={(e) => { setShowHidden(e.target.checked); setCurrentPage(0); loadJokesWithFilters(token!, e.target.checked, showDeleted); }} className="w-4 h-4 rounded border-ink-black/20 text-persimmon focus:ring-persimmon" />
-                    <span className="text-sm text-ink-black/60">显示已隐藏</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={showDeleted} onChange={(e) => { setShowDeleted(e.target.checked); setCurrentPage(0); loadJokesWithFilters(token!, showHidden, e.target.checked); }} className="w-4 h-4 rounded border-ink-black/20 text-persimmon focus:ring-persimmon" />
-                    <span className="text-sm text-ink-black/60">显示已删除</span>
-                  </label>
-                  <input type="text" placeholder="搜索内容或作者..." value={jokeSearch} onChange={(e) => setJokeSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setCurrentPage(0), loadJokesWithFilters(token!, showHidden, showDeleted))} className="w-full sm:w-48 px-4 py-2 rounded-xl border bg-mist-white/50 border-ink-black/20 focus:outline-none focus:border-persimmon text-sm" />
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-ink-black/60">已隐藏:</span>
+                  <select
+                    value={hiddenFilter}
+                    onChange={(e) => setHiddenFilter(e.target.value as 'all' | 'yes' | 'no')}
+                    className="px-3 py-2 rounded-xl border bg-mist-white/50 border-ink-black/20 focus:outline-none focus:border-persimmon text-sm"
+                  >
+                    <option value="all">全部</option>
+                    <option value="yes">是</option>
+                    <option value="no">否</option>
+                  </select>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-ink-black/60">已删除:</span>
+                  <select
+                    value={deletedFilter}
+                    onChange={(e) => setDeletedFilter(e.target.value as 'all' | 'yes' | 'no')}
+                    className="px-3 py-2 rounded-xl border bg-mist-white/50 border-ink-black/20 focus:outline-none focus:border-persimmon text-sm"
+                  >
+                    <option value="all">全部</option>
+                    <option value="yes">是</option>
+                    <option value="no">否</option>
+                  </select>
+                </div>
+                <input
+                  type="text"
+                  placeholder="搜索内容或作者..."
+                  value={jokeSearch}
+                  onChange={(e) => setJokeSearch(e.target.value)}
+                  className="flex-1 min-w-[150px] px-4 py-2 rounded-xl border bg-mist-white/50 border-ink-black/20 focus:outline-none focus:border-persimmon text-sm"
+                />
+                <button
+                  onClick={handleJokeSearch}
+                  className="px-5 py-2 bg-persimmon text-white rounded-xl font-medium hover:bg-persimmon/90 transition shadow-scroll"
+                >
+                  搜索
+                </button>
               </div>
-              <p className="text-sm text-ink-black/40 mt-2">共 {totalJokes} 条帖子</p>
+              <p className="text-sm text-ink-black/40 mt-3">共 {totalJokes} 条帖子</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
