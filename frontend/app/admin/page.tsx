@@ -72,9 +72,9 @@ export default function AdminPage() {
   useEffect(() => {
     if (!token) return;
     if (activeTab === 'users') loadUsers(token);
-    else if (activeTab === 'jokes') loadJokes(token);
-    else if (activeTab === 'comments') loadComments(token);
-  }, [token, activeTab, currentPage]);
+    else if (activeTab === 'jokes') loadJokesWithFilters(token, showHidden, showDeleted);
+    else if (activeTab === 'comments') loadCommentsWithFilters(token, showDeletedComments);
+  }, [token, activeTab, currentPage, showHidden, showDeleted, showDeletedComments]);
 
   async function loadUsers(authToken: string) {
     setLoading(true);
@@ -101,10 +101,39 @@ export default function AdminPage() {
     setLoading(false);
   }
 
+  // Helper function to load jokes with explicit filter values (avoids state race condition)
+  async function loadJokesWithFilters(authToken: string, showHiddenVal: boolean, showDeletedVal: boolean) {
+    setLoading(true);
+    let url = `/api/admin/jokes?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(jokeSearch)}`;
+    if (showHiddenVal) url += '&hidden=true';
+    if (showDeletedVal) url += '&deleted=true';
+    try {
+      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${authToken}` } });
+      const data = await res.json();
+      if (data.error && data.error.includes('Unauthorized')) { localStorage.removeItem('adminToken'); setToken(null); return; }
+      setJokes(data.jokes || []); setTotalJokes(data.total || 0);
+    } catch (e) { console.error('加载帖子失败:', e); }
+    setLoading(false);
+  }
+
   async function loadComments(authToken: string) {
     setLoading(true);
     let url = `/api/admin/comments?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(commentSearch)}`;
     if (showDeletedComments) url += '&deleted=true';
+    try {
+      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${authToken}` } });
+      const data = await res.json();
+      if (data.error && data.error.includes('Unauthorized')) { localStorage.removeItem('adminToken'); setToken(null); return; }
+      setComments(data.comments || []); setTotalComments(data.total || 0);
+    } catch (e) { console.error('加载评论失败:', e); }
+    setLoading(false);
+  }
+
+  // Helper function to load comments with explicit filter value
+  async function loadCommentsWithFilters(authToken: string, showDeletedVal: boolean) {
+    setLoading(true);
+    let url = `/api/admin/comments?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(commentSearch)}`;
+    if (showDeletedVal) url += '&deleted=true';
     try {
       const res = await fetch(url, { headers: { 'Authorization': `Bearer ${authToken}` } });
       const data = await res.json();
@@ -128,7 +157,7 @@ export default function AdminPage() {
     try {
       const res = await fetch(`/api/admin/jokes/${id}/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ hidden }) });
       const data = await res.json();
-      if (data.success) { showToastMsg(hidden ? '帖子已隐藏' : '帖子已显示', 'success'); loadJokes(token!); } else { showToastMsg(data.error || '操作失败', 'error'); }
+      if (data.success) { showToastMsg(hidden ? '帖子已隐藏' : '帖子已显示', 'success'); loadJokesWithFilters(token!, showHidden, showDeleted); } else { showToastMsg(data.error || '操作失败', 'error'); }
     } catch (e) { showToastMsg('操作失败', 'error'); }
   }
 
@@ -265,14 +294,14 @@ export default function AdminPage() {
                 <h2 className="font-serif text-lg text-ink-black">帖子列表</h2>
                 <div className="flex flex-wrap items-center gap-3">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={showHidden} onChange={(e) => { setShowHidden(e.target.checked); setCurrentPage(0); loadJokes(token!); }} className="w-4 h-4 rounded border-ink-black/20 text-persimmon focus:ring-persimmon" />
+                    <input type="checkbox" checked={showHidden} onChange={(e) => { setShowHidden(e.target.checked); setCurrentPage(0); loadJokesWithFilters(token!, e.target.checked, showDeleted); }} className="w-4 h-4 rounded border-ink-black/20 text-persimmon focus:ring-persimmon" />
                     <span className="text-sm text-ink-black/60">显示已隐藏</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={showDeleted} onChange={(e) => { setShowDeleted(e.target.checked); setCurrentPage(0); loadJokes(token!); }} className="w-4 h-4 rounded border-ink-black/20 text-persimmon focus:ring-persimmon" />
+                    <input type="checkbox" checked={showDeleted} onChange={(e) => { setShowDeleted(e.target.checked); setCurrentPage(0); loadJokesWithFilters(token!, showHidden, e.target.checked); }} className="w-4 h-4 rounded border-ink-black/20 text-persimmon focus:ring-persimmon" />
                     <span className="text-sm text-ink-black/60">显示已删除</span>
                   </label>
-                  <input type="text" placeholder="搜索内容或作者..." value={jokeSearch} onChange={(e) => setJokeSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setCurrentPage(0), loadJokes(token!))} className="w-full sm:w-48 px-4 py-2 rounded-xl border bg-mist-white/50 border-ink-black/20 focus:outline-none focus:border-persimmon text-sm" />
+                  <input type="text" placeholder="搜索内容或作者..." value={jokeSearch} onChange={(e) => setJokeSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setCurrentPage(0), loadJokesWithFilters(token!, showHidden, showDeleted))} className="w-full sm:w-48 px-4 py-2 rounded-xl border bg-mist-white/50 border-ink-black/20 focus:outline-none focus:border-persimmon text-sm" />
                 </div>
               </div>
               <p className="text-sm text-ink-black/40 mt-2">共 {totalJokes} 条帖子</p>
@@ -320,10 +349,10 @@ export default function AdminPage() {
                 <h2 className="font-serif text-lg text-ink-black">评论列表</h2>
                 <div className="flex flex-wrap items-center gap-3">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={showDeletedComments} onChange={(e) => { setShowDeletedComments(e.target.checked); setCurrentPage(0); loadComments(token!); }} className="w-4 h-4 rounded border-ink-black/20 text-persimmon focus:ring-persimmon" />
+                    <input type="checkbox" checked={showDeletedComments} onChange={(e) => { setShowDeletedComments(e.target.checked); setCurrentPage(0); loadCommentsWithFilters(token!, e.target.checked); }} className="w-4 h-4 rounded border-ink-black/20 text-persimmon focus:ring-persimmon" />
                     <span className="text-sm text-ink-black/60">显示已删除</span>
                   </label>
-                  <input type="text" placeholder="搜索评论..." value={commentSearch} onChange={(e) => setCommentSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setCurrentPage(0), loadComments(token!))} className="w-full sm:w-48 px-4 py-2 rounded-xl border bg-mist-white/50 border-ink-black/20 focus:outline-none focus:border-persimmon text-sm" />
+                  <input type="text" placeholder="搜索评论..." value={commentSearch} onChange={(e) => setCommentSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setCurrentPage(0), loadCommentsWithFilters(token!, showDeletedComments))} className="w-full sm:w-48 px-4 py-2 rounded-xl border bg-mist-white/50 border-ink-black/20 focus:outline-none focus:border-persimmon text-sm" />
                 </div>
               </div>
               <p className="text-sm text-ink-black/40 mt-2">共 {totalComments} 条评论</p>
