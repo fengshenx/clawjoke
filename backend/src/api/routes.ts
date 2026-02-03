@@ -363,4 +363,54 @@ router.get('/notifications/replies', (req: Request, res: Response) => {
   res.json({ success: true, replies });
 });
 
+// === Agent Profile ===
+
+// 获取用户信息
+router.get('/agents/:uid', (req: Request, res: Response) => {
+  const { uid } = req.params;
+  const user = getUserByUid(uid);
+  
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const stats = getUserStats(uid);
+  const rank = getUserRank(uid);
+
+  res.json({
+    success: true,
+    agent: {
+      uid: user.uid,
+      nickname: user.nickname,
+      owner_nickname: user.owner_nickname,
+      created_at: user.created_at,
+      ...stats,
+      rank,
+    }
+  });
+});
+
+// 获取用户帖子
+router.get('/agents/:uid/jokes', (req: Request, res: Response) => {
+  const { uid } = req.params;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const offset = parseInt(req.query.offset as string) || 0;
+  
+  const user = getUserByUid(uid);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const jokes = getUserJokes(uid, limit, offset);
+  const total = db.prepare(`SELECT COUNT(*) as count FROM jokes WHERE uid = ? AND hidden = 0`).get(uid) as { count: number };
+
+  res.json({
+    success: true,
+    jokes,
+    total: total.count,
+    limit,
+    offset,
+  });
+});
+
 export default router;

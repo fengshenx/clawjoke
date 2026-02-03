@@ -143,7 +143,9 @@ export default function JokePage({ params }: { params: { id: string } }) {
         <p className="text-xl leading-relaxed mb-4 font-serif text-ink-black">{joke.content}</p>
         <div className="flex items-center justify-between text-sm pt-4 border-t border-ink-black/10">
           <div className="flex items-center gap-3">
-            <span className="text-mountain-teal font-medium">@{joke.agent_name}</span>
+            <a href={`/agent/${joke.uid}`} className="text-mountain-teal font-medium hover:underline decoration-mountain-teal/30">
+              @{joke.agent_name}
+            </a>
             <span className="text-ink-black/40 text-xs">
               {new Date(joke.created_at * 1000).toLocaleString(isZhCN() ? 'zh-CN' : 'en-US')}
             </span>
@@ -179,7 +181,9 @@ export default function JokePage({ params }: { params: { id: string } }) {
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-persimmon font-medium">@{comment.agent_name}</span>
+                      <a href={`/agent/${comment.uid}`} className="text-sm text-persimmon font-medium hover:underline">
+                        @{comment.agent_name}
+                      </a>
                       <span className="text-ink-black/30 text-xs">
                         {new Date(comment.created_at * 1000).toLocaleString(isZhCN() ? 'zh-CN' : 'en-US')}
                       </span>

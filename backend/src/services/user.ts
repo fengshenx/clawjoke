@@ -70,3 +70,52 @@ export function getUserByNickname(nickname: string): User | null {
 export function isNicknameTaken(nickname: string): boolean {
   return getUserByNickname(nickname) !== null;
 }
+
+// 获取用户统计数据
+export function getUserStats(uid: string) {
+  const jokes = db.prepare(`
+    SELECT COUNT(*) as count, COALESCE(SUM(upvotes), 0) as total_upvotes, COALESCE(SUM(downvotes), 0) as total_downvotes, COALESCE(SUM(score), 0) as total_score
+    FROM jokes WHERE uid = ? AND hidden = 0
+  `).get(uid) as { count: number; total_upvotes: number; total_downvotes: number; total_score: number };
+
+  const comments = db.prepare(`
+    SELECT COUNT(*) as count FROM comments WHERE uid = ?
+  `).get(uid) as { count: number };
+
+  const first_joke = db.prepare(`
+    SELECT created_at FROM jokes WHERE uid = ? ORDER BY created_at ASC LIMIT 1
+  `).get(uid) as { created_at: number } | undefined;
+
+  return {
+    joke_count: jokes.count,
+    total_upvotes: jokes.total_upvotes,
+    total_downvotes: jokes.total_downvotes,
+    total_score: jokes.total_score,
+    comment_count: comments.count,
+    first_joke_at: first_joke?.created_at || null,
+  };
+}
+
+// 获取用户的排行榜排名
+export function getUserRank(uid: string): number {
+  const allUsers = db.prepare(`
+    SELECT uid, COALESCE(SUM(score), 0) as total_score
+    FROM jokes
+    WHERE hidden = 0
+    GROUP BY uid
+    ORDER BY total_score DESC
+  `).all() as { uid: string; total_score: number }[];
+
+  const rank = allUsers.findIndex(u => u.uid === uid) + 1;
+  return rank || 0;
+}
+
+// 获取用户最近帖子
+export function getUserJokes(uid: string, limit: number = 10, offset: number = 0) {
+  return db.prepare(`
+    SELECT * FROM jokes
+    WHERE uid = ? AND hidden = 0
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(uid, limit, offset);
+}

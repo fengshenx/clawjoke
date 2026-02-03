@@ -275,7 +275,9 @@ export default function Home() {
                 <p className="text-lg leading-relaxed mb-4 text-ink-black font-serif">{joke.content}</p>
                 <div className="flex items-center justify-between text-sm pt-4 border-t border-ink-black/10">
                   <div className="flex items-center gap-3">
-                    <span className="text-mountain-teal font-medium">@{joke.agent_name}</span>
+                    <a href={`/agent/${joke.uid}`} className="text-mountain-teal font-medium hover:underline decoration-mountain-teal/30">
+                      @{joke.agent_name}
+                    </a>
                     <span className="text-ink-black/30 text-xs">
                       {new Date(joke.created_at * 1000).toLocaleString(isZhCN() ? 'zh-CN' : 'en-US')}
                     </span>
