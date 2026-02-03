@@ -128,3 +128,73 @@ export function getUserJokes(uid: string, limit: number = 10, offset: number = 0
     LIMIT ? OFFSET ?
   `).all(uid, limit, offset);
 }
+
+// 成就定义
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  condition: (stats: any) => boolean;
+}
+
+const ACHIEVEMENTS: Achievement[] = [
+  { id: 'first_joke', name: '首发成就', description: '第一次发布笑话', icon: '🎭', condition: (s) => s.joke_count >= 1 },
+  { id: 'joke_10', name: '十面玲珑', description: '发布 10 个笑话', icon: '🎪', condition: (s) => s.joke_count >= 10 },
+  { id: 'joke_25', name: ' Quarter Mark', description: '发布 25 个笑话', icon: '💯', condition: (s) => s.joke_count >= 25 },
+  { id: 'joke_50', name: ' 半百笑匠', description: '发布 50 个笑话', icon: '🎯', condition: (s) => s.joke_count >= 50 },
+  { id: 'first_upvote', name: '初次认可', description: '获得第一个赞', icon: '👍', condition: (s) => s.total_upvotes >= 1 },
+  { id: 'upvote_10', name: '点赞如潮', description: '获得 10 个赞', icon: '🌟', condition: (s) => s.total_upvotes >= 10 },
+  { id: 'comment_5', name: '互动达人', description: '发布 5 条评论', icon: '💬', condition: (s) => s.comment_count >= 5 },
+  { id: 'comment_20', name: '社区活跃', description: '发布 20 条评论', icon: '🗣️', condition: (s) => s.comment_count >= 20 },
+  { id: 'top_10', name: '排行榜精英', description: '进入排行榜 Top 10', icon: '🏆', condition: (s) => s.rank > 0 && s.rank <= 10 },
+  { id: 'top_3', name: '三甲笑星', description: '进入排行榜 Top 3', icon: '🥇', condition: (s) => s.rank > 0 && s.rank <= 3 },
+  { id: 'streak_3', name: '三天打鱼', description: '连续活跃 3 天', icon: '🔥', condition: (s) => s.active_days >= 3 },
+  { id: 'streak_7', name: '坚持不懈', description: '连续活跃 7 天', icon: '✨', condition: (s) => s.active_days >= 7 },
+];
+
+// 计算活跃天数
+function calculateActiveDays(uid: string): number {
+  const days = db.prepare(`
+    SELECT DISTINCT strftime('%Y-%m-%d', created_at) as day
+    FROM jokes
+    WHERE uid = ? AND hidden = 0
+  `).all(uid) as { day: string }[];
+  return days.length;
+}
+
+// 获取用户成就
+export function getUserAchievements(uid: string) {
+  const stats = getUserStats(uid);
+  const activeDays = calculateActiveDays(uid);
+  const rank = getUserRank(uid);
+  
+  const fullStats = { ...stats, active_days: activeDays, rank };
+  
+  const unlocked = ACHIEVEMENTS.filter(a => a.condition(fullStats));
+  const locked = ACHIEVEMENTS.filter(a => !a.condition(fullStats));
+  
+  return {
+    unlocked,
+    locked,
+    total: ACHIEVEMENTS.length,
+    progress: Math.round((unlocked.length / ACHIEVEMENTS.length) * 100),
+  };
+}
+
+// 获取成长统计
+export function getUserGrowthStats(uid: string) {
+  // 按周统计笑话数量
+  const weeklyStats = db.prepare(`
+    SELECT 
+      strftime('%Y-W%W', created_at) as week,
+      COUNT(*) as count,
+      COALESCE(SUM(score), 0) as score
+    FROM jokes
+    WHERE uid = ? AND hidden = 0
+    GROUP BY week
+    ORDER BY week ASC
+  `).all(uid) as { week: string; count: number; score: number }[];
+
+  return weeklyStats;
+}

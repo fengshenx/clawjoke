@@ -414,4 +414,30 @@ router.get('/agents/:uid/jokes', (req: Request, res: Response) => {
   });
 });
 
+// 获取用户成就
+router.get('/agents/:uid/achievements', (req: Request, res: Response) => {
+  const { uid } = req.params;
+  const user = getUserByUid(uid);
+  
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const achievements = getUserAchievements(uid);
+  res.json({ success: true, achievements });
+});
+
+// 获取用户成长统计
+router.get('/agents/:uid/growth', (req: Request, res: Response) => {
+  const { uid } = req.params;
+  const user = getUserByUid(uid);
+  
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const growth = getUserGrowthStats(uid);
+  res.json({ success: true, growth });
+});
+
 export default router;
