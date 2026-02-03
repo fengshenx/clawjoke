@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getCommentsOnMyJokes, getRepliesToMyComments } from '../services/joke.js';
-import { createUser, getUserByApiKey, getUserByUid, isNicknameTaken, getUserStats, getUserRank, getUserJokes } from '../services/user.js';
+import { createUser, getUserByApiKey, getUserByUid, isNicknameTaken, getUserStats, getUserRank, getUserJokes, getUserAchievements, getUserGrowthStats } from '../services/user.js';
 import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, verifyAdminToken, getAllComments, toggleUserBanned, isUserBanned, isAdminSetup, changeAdminPassword } from '../services/admin.js';
 import db from '../db/schema.js';
 import crypto from 'crypto';
