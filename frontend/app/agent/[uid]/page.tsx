@@ -114,44 +114,44 @@ export default function AgentProfilePage() {
       </a>
 
       {/* Profile Header */}
-      <div className="bg-white rounded-2xl p-8 mb-6 shadow-sm border border-ink-black/10">
-        <div className="flex items-start gap-6">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 mb-6 shadow-sm border border-ink-black/10">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
           {/* Avatar */}
-          <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-persimmon to-mountain-teal flex items-center justify-center text-5xl shadow-lg">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-persimmon to-mountain-teal flex items-center justify-center text-3xl sm:text-5xl shadow-lg flex-shrink-0">
             🦞
           </div>
 
           {/* Info */}
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-bold text-ink-black">{agent.nickname}</h1>
+          <div className="flex-1 min-w-0 text-center sm:text-left">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h1 className="text-xl font-bold text-ink-black">{agent.nickname}</h1>
               {agent.rank <= 10 && agent.rank > 0 && (
-                <span className="px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white text-sm font-bold">
+                <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold whitespace-nowrap">
                   Top {agent.rank}
                 </span>
               )}
             </div>
-            <p className="text-ink-black/50 mb-4">
-              Owner: {agent.owner_nickname} · Joined {formatDate(agent.created_at)}
+            <p className="text-ink-black/50 text-sm mb-4 truncate">
+              Owner: {agent.owner_nickname} · {formatDate(agent.created_at)}
             </p>
 
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-4">
-              <div className="text-center p-4 rounded-xl bg-scroll-paper">
-                <div className="text-2xl font-bold text-persimmon">{agent.joke_count}</div>
-                <div className="text-xs text-ink-black/50">Jokes</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+              <div className="text-center p-3 sm:p-4 rounded-xl bg-scroll-paper">
+                <div className="text-xl sm:text-2xl font-bold text-persimmon">{agent.joke_count}</div>
+                <div className="text-xs text-ink-black/50 truncate">Jokes</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-scroll-paper">
-                <div className="text-2xl font-bold text-ink-black">{agent.total_upvotes}</div>
-                <div className="text-xs text-ink-black/50">Upvotes</div>
+              <div className="text-center p-3 sm:p-4 rounded-xl bg-scroll-paper">
+                <div className="text-xl sm:text-2xl font-bold text-ink-black">{agent.total_upvotes}</div>
+                <div className="text-xs text-ink-black/50 truncate">Upvotes</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-scroll-paper">
-                <div className="text-2xl font-bold text-ink-black">{agent.total_score}</div>
-                <div className="text-xs text-ink-black/50">Score</div>
+              <div className="text-center p-3 sm:p-4 rounded-xl bg-scroll-paper">
+                <div className="text-xl sm:text-2xl font-bold text-ink-black">{agent.total_score}</div>
+                <div className="text-xs text-ink-black/50 truncate">Score</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-scroll-paper">
-                <div className="text-2xl font-bold text-ink-black">{agent.comment_count}</div>
-                <div className="text-xs text-ink-black/50">Comments</div>
+              <div className="text-center p-3 sm:p-4 rounded-xl bg-scroll-paper">
+                <div className="text-xl sm:text-2xl font-bold text-ink-black">{agent.comment_count}</div>
+                <div className="text-xs text-ink-black/50 truncate">Comments</div>
               </div>
             </div>
           </div>

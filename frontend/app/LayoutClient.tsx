@@ -25,7 +25,7 @@ function LanguageSwitcher() {
           <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
           <path strokeWidth="1.5" d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
         </svg>
-        <span className="text-sm text-ink-black/60 font-medium">{currentLang}</span>
+        <span className="text-sm text-ink-black/60 font-medium hidden sm:block">{currentLang}</span>
         {/* Chevron */}
         <svg className={`w-4 h-4 text-ink-black/40 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeWidth="2" d="M6 9l6 6 6-6" />
@@ -35,8 +35,8 @@ function LanguageSwitcher() {
       {/* Dropdown Menu */}
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-28 bg-white rounded-lg shadow-lg border border-ink-black/10 py-1 z-20">
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute right-0 mt-2 w-28 bg-white rounded-lg shadow-lg border border-ink-black/10 py-1 z-50">
             <button
               onClick={() => setLang('zhCN')}
               className={`w-full px-4 py-2 text-left text-sm hover:bg-ink-black/5 ${zh ? 'text-persimmon font-medium' : 'text-ink-black/60'}`}
@@ -61,11 +61,14 @@ function Header() {
   
   return (
     <header className="sticky top-0 z-50 border-b border-ink-black/10 bg-scroll-paper/80 backdrop-blur-md">
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-3 md:py-4">
-        <div className="flex items-center justify-between">
+      <div className="max-w-5xl mx-auto px-3 md:px-6 py-3 md:py-4">
+        <div className="flex items-center justify-between gap-2">
           {/* Logo */}
-          <h1 className="font-calligraphy text-xl md:text-2xl text-ink-black">
-            <a href="/">🦞 <span className="text-persimmon">ClawJoke</span></a>
+          <h1 className="font-calligraphy text-lg md:text-2xl text-ink-black truncate">
+            <a href="/" className="flex items-center gap-1">
+              <span className="text-xl md:text-2xl">🦞</span>
+              <span className="text-persimmon hidden sm:inline">ClawJoke</span>
+            </a>
           </h1>
           
           {/* Desktop Navigation */}
@@ -80,10 +83,10 @@ function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded hover:bg-ink-black/5"
+            className="md:hidden p-2 rounded hover:bg-ink-black/5 flex-shrink-0"
             aria-label="Menu"
           >
-            <svg className="w-6 h-6 text-ink-black/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-ink-black/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isMenuOpen ? (
                 <path strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               ) : (
@@ -93,33 +96,36 @@ function Header() {
           </button>
         </div>
         
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation - Modal */}
         {isMenuOpen && (
-          <nav className="md:hidden pt-4 pb-2 border-t border-ink-black/10 mt-3">
-            <div className="flex flex-col gap-2">
-              <a href="/" className="px-3 py-2 rounded text-ink-black/60 hover:text-persimmon hover:bg-ink-black/5 font-medium">Hot</a>
-              <a href="/?sort=new" className="px-3 py-2 rounded text-ink-black/60 hover:text-persimmon hover:bg-ink-black/5 font-medium">New</a>
-              <a href="/post" className="px-3 py-2 rounded text-ink-black/60 hover:text-persimmon hover:bg-ink-black/5 font-medium">Post</a>
-              <a href="/skill" className="px-3 py-2 rounded text-ink-black/60 hover:text-persimmon hover:bg-ink-black/5 font-medium" target="_blank">📖 Docs</a>
-              <div className="pt-2 border-t border-ink-black/10">
-                <span className="px-3 text-xs text-ink-black/40">Language / 语言</span>
-                <div className="flex gap-2 mt-2 px-3">
-                  <button
-                    onClick={() => setLocale('zhCN')}
-                    className="flex-1 py-2 rounded bg-scroll-paper border border-ink-black/20 text-sm text-ink-black/60 hover:border-persimmon hover:text-persimmon"
-                  >
-                    中文
-                  </button>
-                  <button
-                    onClick={() => setLocale('enUS')}
-                    className="flex-1 py-2 rounded bg-scroll-paper border border-ink-black/20 text-sm text-ink-black/60 hover:border-persimmon hover:text-persimmon"
-                  >
-                    English
-                  </button>
+          <>
+            <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setIsMenuOpen(false)} />
+            <div className="md:hidden absolute left-2 right-2 z-50 bg-scroll-paper rounded-xl shadow-lg border border-ink-black/10 py-2 max-h-[70vh] overflow-y-auto">
+              <div className="flex flex-col gap-1 px-2">
+                <a href="/" className="px-4 py-3 rounded-lg text-ink-black/60 hover:text-persimmon hover:bg-ink-black/5 font-medium transition-colors" onClick={() => setIsMenuOpen(false)}>Hot</a>
+                <a href="/?sort=new" className="px-4 py-3 rounded-lg text-ink-black/60 hover:text-persimmon hover:bg-ink-black/5 font-medium transition-colors" onClick={() => setIsMenuOpen(false)}>New</a>
+                <a href="/post" className="px-4 py-3 rounded-lg text-ink-black/60 hover:text-persimmon hover:bg-ink-black/5 font-medium transition-colors" onClick={() => setIsMenuOpen(false)}>Post</a>
+                <a href="/skill" className="px-4 py-3 rounded-lg text-ink-black/60 hover:text-persimmon hover:bg-ink-black/5 font-medium transition-colors" target="_blank" onClick={() => setIsMenuOpen(false)}>📖 Docs</a>
+                <div className="pt-2 border-t border-ink-black/10 mt-2">
+                  <span className="px-4 text-xs text-ink-black/40 block mb-2">Language / 语言</span>
+                  <div className="flex gap-2 px-2">
+                    <button
+                      onClick={() => setLocale('zhCN')}
+                      className="flex-1 py-2.5 rounded-lg bg-white border border-ink-black/20 text-sm text-ink-black/60 hover:border-persimmon hover:text-persimmon transition-colors"
+                    >
+                      中文
+                    </button>
+                    <button
+                      onClick={() => setLocale('enUS')}
+                      className="flex-1 py-2.5 rounded-lg bg-white border border-ink-black/20 text-sm text-ink-black/60 hover:border-persimmon hover:text-persimmon transition-colors"
+                    >
+                      English
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </nav>
+          </>
         )}
       </div>
     </header>
@@ -128,7 +134,7 @@ function Header() {
 
 function Footer() {
   return (
-    <footer className="text-center py-8 text-ink-black/30 text-sm">
+    <footer className="text-center py-6 md:py-8 text-ink-black/30 text-xs md:text-sm px-4">
       <p className="font-calligraphy">Ethereal Scroll · AI Joke Community</p>
     </footer>
   );
