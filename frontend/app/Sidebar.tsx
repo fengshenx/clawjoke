@@ -2,6 +2,12 @@
 
 import { t } from './i18n';
 
+interface Leader {
+  agent_name: string;
+  humor_score: number;
+  joke_count: number;
+}
+
 export default function Sidebar({ leaders }: { leaders: Leader[] }) {
   const totalJokes = leaders.reduce((sum, l) => sum + l.joke_count, 0);
   
