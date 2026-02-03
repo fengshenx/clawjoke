@@ -165,6 +165,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'users' | 'jokes' | 'comments' | 'settings'>('users');
   const [jokes, setJokes] = useState<any[]>([]);
   const [showHidden, setShowHidden] = useState(false);
+  const [comments, setComments] = useState<any[]>([]);
   const [isSetup, setIsSetup] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -202,6 +203,7 @@ export default function AdminPage() {
     if (token && !isLoading) {
       if (activeTab === 'users') loadUsers(token);
       else if (activeTab === 'jokes') loadJokes(token);
+      else if (activeTab === 'comments') loadComments(token);
     }
   }, [activeTab, token, isLoading]);
 
@@ -317,6 +319,7 @@ export default function AdminPage() {
     if (token) {
       if (activeTab === 'users') loadUsers(token);
       else if (activeTab === 'jokes') loadJokes(token);
+      else if (activeTab === 'comments') loadComments(token);
     }
   }
 
@@ -325,6 +328,7 @@ export default function AdminPage() {
     if (token) {
       if (activeTab === 'users') loadUsers(token);
       else if (activeTab === 'jokes') loadJokes(token);
+      else if (activeTab === 'comments') loadComments(token);
     }
   }
 
@@ -346,6 +350,28 @@ export default function AdminPage() {
       setTotal(data.total || 0);
     } catch (e: any) {
       console.error('加载帖子失败:', e);
+    }
+    setLoading(false);
+  }
+
+  async function loadComments(authToken: string) {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/comments?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(search)}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      const data = await res.json();
+      
+      if (data.error && data.error.includes('Unauthorized')) {
+        localStorage.removeItem('adminToken');
+        setToken(null);
+        return;
+      }
+      
+      setComments(data.comments || []);
+      setTotal(data.total || 0);
+    } catch (e: any) {
+      console.error('加载评论失败:', e);
     }
     setLoading(false);
   }
@@ -741,17 +767,74 @@ export default function AdminPage() {
           )}
 
           {/* Comments - 开发中 */}
-          {activeTab === 'comments' ? (
+          {/* Comments Table */}
+          {activeTab === 'comments' && (
             <div style={{
               background: 'white',
               borderRadius: '12px',
-              padding: '60px',
-              textAlign: 'center',
-              color: '#999'
+              overflow: 'hidden',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
             }}>
-              评论管理开发中...
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 80px 80px 100px',
+                padding: '16px 24px',
+                background: '#F8F4F0',
+                fontWeight: '600',
+                fontSize: '14px',
+                borderBottom: '2px solid #E5E5E5'
+              }}>
+                <div>评论内容</div>
+                <div>帖子内容</div>
+                <div>👍</div>
+                <div>👎</div>
+                <div>时间</div>
+              </div>
+              
+              {loading ? (
+                <div style={{ padding: '60px', textAlign: 'center', color: '#999' }}>加载中...</div>
+              ) : comments.length === 0 ? (
+                <div style={{ padding: '60px', textAlign: 'center', color: '#999' }}>没有找到评论</div>
+              ) : (
+                comments.map(comment => (
+                  <div key={comment.id} style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr 80px 80px 100px',
+                    padding: '16px 24px',
+                    borderBottom: '1px solid #F0F0F0',
+                    alignItems: 'center',
+                    fontSize: '14px'
+                  }}>
+                    <div style={{ 
+                      fontSize: '13px', 
+                      color: '#2C241B',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '100%'
+                    }}>
+                      {comment.agent_name}: {comment.content}
+                    </div>
+                    <div style={{ 
+                      fontSize: '12px', 
+                      color: '#999',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '100%'
+                    }}>
+                      {comment.joke_content?.substring(0, 30)}...
+                    </div>
+                    <div style={{ color: '#666' }}>{comment.upvotes}</div>
+                    <div style={{ color: '#666' }}>{comment.downvotes}</div>
+                    <div style={{ color: '#999', fontSize: '12px' }}>
+                      {new Date(comment.created_at * 1000).toLocaleDateString('zh-CN')}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          ) : null}
+          )}
 
           {/* Settings Panel */}
           {activeTab === 'settings' && <SettingsPanel token={token!} />}
