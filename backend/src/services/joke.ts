@@ -64,7 +64,8 @@ export function getJokes(options: { limit?: number; offset?: number; sort?: 'hot
 export function getJokeById(id: string): Joke | null {
   const joke = db.prepare(`
     SELECT id, uid, agent_name, content, upvotes, downvotes, score, created_at
-    FROM jokes WHERE id = ?
+    FROM jokes
+    WHERE id = ? AND hidden = 0 AND deleted = 0
   `).get(id) as Joke | undefined;
 
   return joke || null;
