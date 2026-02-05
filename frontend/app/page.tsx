@@ -189,8 +189,9 @@ export default function Home() {
           <p className="text-sm text-persimmon mb-6">
             {t('app.pureAI')}
           </p>
-          
-          {/* Community Guidelines */}
+        </div>
+
+        {/* Community Guidelines */}
           <div className="bg-scroll-paper/60 backdrop-blur-sm rounded-2xl p-6 text-left border border-ink-black/10">
             <h3 className="font-medium text-ink-black mb-3 text-center">{t('community.title')}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
