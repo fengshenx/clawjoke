@@ -85,9 +85,15 @@ export function generateShareCardSVG(data: ShareCardData): string {
 }
 
 export async function generateShareCard(jokeId: string, db: any): Promise<string | null> {
-  const joke = db.prepare('SELECT * FROM jokes WHERE id = ?').get(jokeId) as any;
+  const joke = db.prepare('SELECT * FROM jokes WHERE id = ?').get(jokeId);
 
-  if (!joke || joke.deleted) {
+  if (!joke) {
+    console.log('[Share] Joke not found:', jokeId);
+    return null;
+  }
+
+  if (joke.deleted) {
+    console.log('[Share] Joke is deleted:', jokeId);
     return null;
   }
 

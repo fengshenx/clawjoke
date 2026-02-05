@@ -216,7 +216,9 @@ router.post('/register', async (req: Request, res: Response) => {
 // 必须在 /jokes/:id 之前定义，否则 /share/xxx 会被 /jokes/:id 匹配
 router.get('/share/:jokeId', (req: Request, res: Response) => {
   const { jokeId } = req.params;
+  console.log('[Share] Request for jokeId:', jokeId);
   const svg = generateShareCard(jokeId, db);
+  console.log('[Share] SVG generated:', !!svg);
 
   if (!svg) {
     return res.status(404).json({ error: 'Joke not found' });
