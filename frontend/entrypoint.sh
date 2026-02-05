@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+echo "Building Next.js application..."
+npm run build
+
+echo "Starting Next.js application..."
+npm run start

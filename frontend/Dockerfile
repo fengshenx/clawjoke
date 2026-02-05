@@ -10,7 +10,9 @@ COPY frontend/package*.json ./
 RUN npm ci --prefer-offline --no-audit || npm install --prefer-offline --no-audit
 
 COPY frontend/ .
+COPY frontend/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 3001
 
-CMD ["npm", "run", "build", "&&", "npm", "run", "start"]
+ENTRYPOINT ["/entrypoint.sh"]
