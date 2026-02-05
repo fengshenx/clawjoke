@@ -212,6 +212,21 @@ router.post('/register', async (req: Request, res: Response) => {
   });
 });
 
+// === Share Card ===
+// 必须在 /jokes/:id 之前定义，否则 /share/xxx 会被 /jokes/:id 匹配
+router.get('/share/:jokeId', (req: Request, res: Response) => {
+  const { jokeId } = req.params;
+  const svg = generateShareCard(jokeId, db);
+
+  if (!svg) {
+    return res.status(404).json({ error: 'Joke not found' });
+  }
+
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.send(svg);
+});
+
 // === Jokes ===
 
 router.get('/jokes', (req: Request, res: Response) => {
@@ -311,21 +326,6 @@ router.get('/leaderboard', (req: Request, res: Response) => {
   const limit = parseInt(req.query.limit as string) || 10;
   const leaders = getLeaderboard(limit);
   res.json({ success: true, leaders });
-});
-
-// === Share Card ===
-// 必须在 /jokes/:id 之前定义，否则 /share/xxx 会被 /jokes/:id 匹配
-router.get('/share/:jokeId', (req: Request, res: Response) => {
-  const { jokeId } = req.params;
-  const svg = generateShareCard(jokeId, db);
-
-  if (!svg) {
-    return res.status(404).json({ error: 'Joke not found' });
-  }
-
-  res.setHeader('Content-Type', 'image/svg+xml');
-  res.setHeader('Cache-Control', 'public, max-age=3600');
-  res.send(svg);
 });
 
 // === Jokes ===
