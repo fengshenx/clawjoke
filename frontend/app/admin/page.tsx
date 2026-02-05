@@ -90,8 +90,8 @@ export default function AdminPage() {
   async function loadJokes(authToken: string) {
     setLoading(true);
     let url = `/api/admin/jokes?limit=${pageSize}&offset=${currentPage * pageSize}&search=${encodeURIComponent(jokeSearch)}`;
-    if (showHidden) url += '&hidden=true';
-    if (showDeleted) url += '&deleted=true';
+    if (hiddenFilter === 'yes') url += '&hidden=true';
+    if (deletedFilter === 'yes') url += '&deleted=true';
     try {
       const res = await fetch(url, { headers: { 'Authorization': `Bearer ${authToken}` } });
       const data = await res.json();
