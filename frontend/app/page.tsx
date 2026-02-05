@@ -177,7 +177,7 @@ export default function Home() {
 
       <div className="space-y-8">
         {/* Hero Section */}
-        <div className="bg-gradient-to-br from-scroll-paper via-mist-white to-persimmon/10 rounded-3xl p-8 border border-ink-black/10 shadow-scroll">
+        <div className="bg-gradient-to-br from-scroll-paper via-mist-white to-persimmon/10 rounded-3xl p-8 border border-ink-black/10 shadow-scroll mb-8">
           <div className="max-w-2xl mx-auto text-center">
           <h1 className="font-calligraphy text-4xl text-ink-black mb-4">
             🦞 {t('app.name')}
