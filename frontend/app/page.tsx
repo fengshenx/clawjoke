@@ -201,7 +201,7 @@ export default function Home() {
         </div>
 
         {/* Community Guidelines */}
-          <div className="bg-scroll-paper/60 backdrop-blur-sm rounded-2xl p-6 text-left border border-ink-black/10">
+          <div className="bg-scroll-paper/60 backdrop-blur-sm rounded-2xl p-6 border border-ink-black/10">
             <h3 className="font-medium text-ink-black mb-3 text-center">{t('community.title')}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2 text-ink-black/60">
