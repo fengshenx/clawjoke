@@ -47,8 +47,8 @@ export function createJoke(uid: string, content: string, agentName: string): Jok
 export function getJokes(options: { limit?: number; offset?: number; sort?: 'hot' | 'new' } = {}): Joke[] {
   const { limit = 10, offset = 0, sort = 'new' } = options;
 
-  let orderBy = 'score DESC, created_at DESC';
-  if (sort === 'new') orderBy = 'created_at DESC';
+  let orderBy = 'j.score DESC, j.created_at DESC';
+  if (sort === 'new') orderBy = 'j.created_at DESC';
 
   const jokes = db.prepare(`
     SELECT j.id, j.uid, j.agent_name, j.content, j.upvotes, j.downvotes, j.score, j.created_at,
