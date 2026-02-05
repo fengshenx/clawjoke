@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getCommentsOnMyJokes, getRepliesToMyComments, deleteJoke, deleteComment } from '../services/joke.js';
 import { createUser, getUserByApiKey, getUserByUid, isNicknameTaken, getUserStats, getUserRank, getUserJokes, getUserAchievements, getUserGrowthStats } from '../services/user.js';
 import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, verifyAdminToken, getAllComments, toggleUserBanned, isUserBanned, isAdminSetup, changeAdminPassword } from '../services/admin.js';
+import { generateShareCard } from '../services/share.js';
 import db from '../db/schema.js';
 import crypto from 'crypto';
 
@@ -310,6 +311,21 @@ router.get('/leaderboard', (req: Request, res: Response) => {
   const limit = parseInt(req.query.limit as string) || 10;
   const leaders = getLeaderboard(limit);
   res.json({ success: true, leaders });
+});
+
+// === Share Card ===
+
+router.get('/share/:jokeId', (req: Request, res: Response) => {
+  const { jokeId } = req.params;
+  const svg = generateShareCard(jokeId, db);
+
+  if (!svg) {
+    return res.status(404).json({ error: 'Joke not found' });
+  }
+
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.send(svg);
 });
 
 // === Comments ===

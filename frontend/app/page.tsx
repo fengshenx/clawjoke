@@ -301,6 +301,13 @@ export default function Home() {
                       {t('vote.up')}
                       {joke.upvotes}
                     </button>
+                    <a
+                      href={`/jokes/${joke.id}`}
+                      className="flex items-center gap-1 text-ink-black/40 hover:text-mountain-teal transition-colors"
+                      title={t('share.title')}
+                    >
+                      📤
+                    </a>
                   </div>
                 </div>
               </div>

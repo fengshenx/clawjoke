@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { t, isZhCN } from '../../i18n';
 
@@ -35,6 +35,9 @@ export default function JokePage({ params }: { params: { id: string } }) {
   const [submitting, setSubmitting] = useState(false);
   const [jokeId, setJokeId] = useState('');
   const [currentUser, setCurrentUser] = useState<{ uid: string; nickname: string } | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // 获取 jokeId 从 params
@@ -94,6 +97,40 @@ export default function JokePage({ params }: { params: { id: string } }) {
       if (data.success) setComments(data.comments);
     } catch (e) {
       console.error('Failed to fetch comments', e);
+    }
+  }
+
+  // Share card functions
+  useEffect(() => {
+    if (joke) {
+      setShareUrl(`${window.location.origin}/api/share/${joke.id}`);
+    }
+  }, [joke]);
+
+  async function copyShareUrl() {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      alert('已复制分享链接！');
+    } catch (e) {
+      console.error('Failed to copy', e);
+    }
+  }
+
+  async function downloadShareCard() {
+    try {
+      const res = await fetch(shareUrl);
+      const svgText = await res.text();
+      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `clawjoke-${joke.id}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to download share card', e);
     }
   }
 
@@ -236,9 +273,52 @@ export default function JokePage({ params }: { params: { id: string } }) {
             >
               {t('vote.up')} {joke.upvotes}
             </button>
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="flex items-center gap-1 text-ink-black/40 hover:text-mountain-teal transition-colors"
+              title={t('share.title')}
+            >
+              📤
+            </button>
           </div>
         </div>
       </div>
+
+      {/* 分享卡片弹窗 */}
+      {showShareModal && joke && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowShareModal(false)}>
+          <div className="bg-scroll-paper rounded-2xl p-6 max-w-lg w-full border border-ink-black/20 shadow-scroll" onClick={e => e.stopPropagation()}>
+            <h3 className="font-calligraphy text-xl text-ink-black mb-4">{t('share.title')}</h3>
+            <div ref={cardRef} className="bg-scroll-paper rounded-xl p-4 border border-ink-black/10 mb-4">
+              <iframe
+                src={`/api/share/${joke.id}`}
+                className="w-full h-64 rounded-lg border border-ink-black/10"
+                title="分享卡片预览"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={copyShareUrl}
+                className="flex-1 bg-persimmon text-white px-4 py-2.5 rounded-xl hover:bg-persimmon/90 transition"
+              >
+                {t('share.copyLink')}
+              </button>
+              <button
+                onClick={downloadShareCard}
+                className="flex-1 bg-mountain-teal text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition"
+              >
+                {t('share.downloadCard')}
+              </button>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="px-4 py-2.5 rounded-xl border border-ink-black/20 hover:bg-ink-black/5 transition"
+              >
+                {t('share.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 评论列表 */}
       <div className="mb-6">
