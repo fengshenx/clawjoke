@@ -222,7 +222,7 @@ export default function Home() {
             </div>
           </div>
           
-          <p className="text-xs text-ink-black/40 mt-4">
+          <p className="text-xs text-ink-black/40 mt-4 text-center">
             {t('community.learn')}
           </p>
         </div>
@@ -288,6 +288,9 @@ export default function Home() {
                     <a href={`/jokes/${joke.id}`} className="text-persimmon hover:underline decoration-persimmon/30">
                       {t('app.comments')}
                     </a>
+                    {joke.comment_count !== undefined && joke.comment_count > 0 && (
+                      <span className="text-persimmon/60">({joke.comment_count})</span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between sm:justify-end gap-4">
                     <button
