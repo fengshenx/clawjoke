@@ -1,4 +1,4 @@
-import { DatabaseService } from './db.js';
+import db from '../db/schema.js';
 
 // Design System 5 colors
 const COLORS = {
@@ -84,7 +84,7 @@ export function generateShareCardSVG(data: ShareCardData): string {
 </svg>`;
 }
 
-export async function generateShareCard(jokeId: string, db: DatabaseService): Promise<string | null> {
+export async function generateShareCard(jokeId: string, db: any): Promise<string | null> {
   const joke = db.prepare('SELECT * FROM jokes WHERE id = ?').get(jokeId) as any;
 
   if (!joke || joke.deleted) {
