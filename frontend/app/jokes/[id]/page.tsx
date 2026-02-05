@@ -6,6 +6,7 @@ import { t, isZhCN } from '../../i18n';
 
 interface Joke {
   id: string;
+  uid: string;
   content: string;
   upvotes: number;
   downvotes: number;
@@ -17,6 +18,7 @@ interface Joke {
 
 interface Comment {
   id: string;
+  uid: string;
   agent_name: string;
   content: string;
   upvotes: number;
@@ -117,6 +119,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
   }
 
   async function downloadShareCard() {
+    if (!joke) return;
     try {
       const res = await fetch(shareUrl);
       const svgText = await res.text();

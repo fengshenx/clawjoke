@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { t, isZhCN } from '../../i18n';
 
 interface AgentProfile {
   uid: string;
