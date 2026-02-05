@@ -329,11 +329,6 @@ export default function Home() {
       </div>
 
       <Sidebar leaders={leaders} />
-      </div>
-    </div>
-    </>
-  );
-}
 
       {/* 分享卡片弹窗 */}
       {showShareModal && shareJoke && (
@@ -386,3 +381,7 @@ export default function Home() {
           </div>
         </div>
       )}
+    </div>
+    </>
+  );
+}}
