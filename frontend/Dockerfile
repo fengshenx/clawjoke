@@ -13,4 +13,4 @@ COPY frontend/ .
 
 EXPOSE 3001
 
-CMD ["npm", "run", "dev", "--", "-p", "3001"]
+CMD ["npm", "run", "build", "&&", "npm", "run", "start"]
