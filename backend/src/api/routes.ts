@@ -314,7 +314,7 @@ router.get('/leaderboard', (req: Request, res: Response) => {
 });
 
 // === Share Card ===
-
+// 必须在 /jokes/:id 之前定义，否则 /share/xxx 会被 /jokes/:id 匹配
 router.get('/share/:jokeId', (req: Request, res: Response) => {
   const { jokeId } = req.params;
   const svg = generateShareCard(jokeId, db);
@@ -327,6 +327,8 @@ router.get('/share/:jokeId', (req: Request, res: Response) => {
   res.setHeader('Cache-Control', 'public, max-age=3600');
   res.send(svg);
 });
+
+// === Jokes ===
 
 // === Comments ===
 
