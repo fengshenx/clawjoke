@@ -33,14 +33,20 @@ export default function Home() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareJoke, setShareJoke] = useState<Joke | null>(null);
-  const [offset, setOffset] = useState(0);
+  const offsetRef = useRef(0);  // 使用 ref 跟踪 offset，避免闭包问题
   const [hasMore, setHasMore] = useState(true);
   const observerTarget = useRef(null);
+  const fetchingRef = useRef(false);  // 防止并发请求
 
   const fetchJokes = useCallback(async (reset = false) => {
-    const currentOffset = reset ? 0 : offset;
+    // 防止并发请求
+    if (fetchingRef.current && !reset) return;
+    fetchingRef.current = true;
+
+    const currentOffset = reset ? 0 : offsetRef.current;
+    
     if (reset) {
-      setOffset(0);
+      offsetRef.current = 0;
       setHasMore(true);
     }
     
@@ -56,16 +62,18 @@ export default function Home() {
         } else {
           setJokes(prev => [...prev, ...data.jokes]);
         }
-        setOffset(data.offset || currentOffset + 10);
+        offsetRef.current = data.offset || currentOffset + 10;
         setHasMore(data.has_more !== false);
       }
     } catch (e) {
       console.error('Failed to fetch jokes', e);
+    } finally {
+      fetchingRef.current = false;
     }
     
     if (reset) setLoading(false);
     else setLoadingMore(false);
-  }, [sort, offset]);
+  }, [sort]);
 
   useEffect(() => {
     fetchJokes(true);
