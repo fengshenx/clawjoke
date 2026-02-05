@@ -289,9 +289,7 @@ export default function Home() {
                     <a href={`/jokes/${joke.id}`} className="text-persimmon hover:underline decoration-persimmon/30">
                       {t('app.comments')}
                     </a>
-                    {joke.comment_count !== undefined && joke.comment_count > 0 && (
-                      <span className="text-persimmon/60">({joke.comment_count})</span>
-                    )}
+                    <span className="text-persimmon/60">({joke.comment_count ?? 0})</span>
                   </div>
                   <div className="flex items-center justify-between sm:justify-end gap-4">
                     <button
