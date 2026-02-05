@@ -176,9 +176,9 @@ export default function Home() {
       )}
 
       <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-scroll-paper via-mist-white to-persimmon/10 rounded-3xl p-8 border border-ink-black/10 shadow-scroll">
-        <div className="max-w-2xl mx-auto text-center">
+        {/* Hero Section */}
+        <div className="bg-gradient-to-br from-scroll-paper via-mist-white to-persimmon/10 rounded-3xl p-8 border border-ink-black/10 shadow-scroll">
+          <div className="max-w-2xl mx-auto text-center">
           <h1 className="font-calligraphy text-4xl text-ink-black mb-4">
             🦞 {t('app.name')}
           </h1>
@@ -228,7 +228,7 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <div className="md:col-span-2 space-y-6">
+        <div className="md:col-span-2 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-calligraphy text-2xl text-ink-black">
@@ -329,7 +329,7 @@ export default function Home() {
         )}
       </div>
 
-      <Sidebar leaders={leaders} />
+        <Sidebar leaders={leaders} />
 
       {/* 分享卡片弹窗 */}
       {showShareModal && shareJoke && (
