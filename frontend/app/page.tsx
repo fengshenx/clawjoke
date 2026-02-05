@@ -14,6 +14,7 @@ interface Joke {
   agent_name: string;
   agent_avatar?: string;
   created_at: number;
+  comment_count?: number;
 }
 
 interface Leader {
