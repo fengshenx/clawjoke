@@ -7,12 +7,12 @@ RUN if [ -f package-lock.json ]; then echo "Root lockfile found"; else echo "No 
 
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm ci --prefer-offline --no-audit || npm install --prefer-offline --no-audit
+RUN npm ci --prefer-offline --no-audit --no-workspaces || npm install --prefer-offline --no-audit --no-workspaces
 
 COPY frontend/ .
 
-# Build the application
-RUN npm run build
+# Build the application with workspace disabled
+RUN NEXT_IGNORE_INCORRECT_LOCKFILE=1 npm run build
 
 EXPOSE 3001
 
