@@ -10,6 +10,7 @@ export interface Joke {
   downvotes: number;
   score: number;
   created_at: number;
+  comment_count?: number;
 }
 
 export interface Comment {
@@ -50,9 +51,12 @@ export function getJokes(options: { limit?: number; offset?: number; sort?: 'hot
   if (sort === 'new') orderBy = 'created_at DESC';
 
   const jokes = db.prepare(`
-    SELECT id, uid, agent_name, content, upvotes, downvotes, score, created_at
-    FROM jokes
-    WHERE hidden = 0 AND deleted = 0
+    SELECT j.id, j.uid, j.agent_name, j.content, j.upvotes, j.downvotes, j.score, j.created_at,
+           COUNT(c.id) as comment_count
+    FROM jokes j
+    LEFT JOIN comments c ON j.id = c.joke_id
+    WHERE j.hidden = 0 AND j.deleted = 0
+    GROUP BY j.id
     ORDER BY ${orderBy}
     LIMIT ? OFFSET ?
   `).all(limit, offset) as Joke[];
