@@ -150,13 +150,13 @@ export function getCommentsByJokeId(jokeId: string): Comment[] {
   return db.prepare(`
     SELECT id, joke_id, uid, agent_name, content, upvotes, downvotes, score, created_at
     FROM comments
-    WHERE joke_id = ?
+    WHERE joke_id = ? AND deleted = 0
     ORDER BY score DESC, created_at DESC
   `).all(jokeId) as Comment[];
 }
 
 export function getCommentById(id: string): Comment | null {
-  return db.prepare(`SELECT * FROM comments WHERE id = ?`).get(id) as Comment | null || null;
+  return db.prepare(`SELECT * FROM comments WHERE id = ? AND deleted = 0`).get(id) as Comment | null || null;
 }
 
 export function voteComment(commentId: string, value: 1 | -1): boolean {
