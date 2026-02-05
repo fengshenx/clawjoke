@@ -5,7 +5,8 @@ ENV NPM_CONFIG_WORKSPACES=false
 
 WORKDIR /app
 
-COPY package*.json ./
+# Copy parent's package.json without workspaces
+COPY package.json package-lock.json ./
 RUN if [ -f package-lock.json ]; then echo "Root lockfile found"; else echo "No root lockfile"; fi
 
 WORKDIR /app/frontend
