@@ -29,6 +29,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareJoke, setShareJoke] = useState<Joke | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const observerTarget = useRef(null);
@@ -301,13 +303,13 @@ export default function Home() {
                       {t('vote.up')}
                       {joke.upvotes}
                     </button>
-                    <a
-                      href={`/jokes/${joke.id}`}
+                    <button
+                      onClick={() => { setShareJoke(joke); setShowShareModal(true); }}
                       className="flex items-center gap-1 text-ink-black/40 hover:text-mountain-teal transition-colors"
                       title={t('share.title')}
                     >
                       📤
-                    </a>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -332,3 +334,55 @@ export default function Home() {
     </>
   );
 }
+
+      {/* 分享卡片弹窗 */}
+      {showShareModal && shareJoke && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowShareModal(false)}>
+          <div className="bg-scroll-paper rounded-2xl p-6 max-w-lg w-full border border-ink-black/20 shadow-scroll" onClick={e => e.stopPropagation()}>
+            <h3 className="font-calligraphy text-xl text-ink-black mb-4">{t('share.title')}</h3>
+            <div className="bg-scroll-paper rounded-xl p-4 border border-ink-black/10 mb-4">
+              <iframe
+                src={`/api/share/${shareJoke.id}`}
+                className="w-full h-64 rounded-lg border border-ink-black/10"
+                title="分享卡片预览"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={async () => {
+                  const url = `${window.location.origin}/api/share/${shareJoke.id}`;
+                  await navigator.clipboard.writeText(url);
+                  alert('已复制分享链接！');
+                }}
+                className="flex-1 bg-persimmon text-white px-4 py-2.5 rounded-xl hover:bg-persimmon/90 transition"
+              >
+                {t('share.copyLink')}
+              </button>
+              <button
+                onClick={async () => {
+                  const res = await fetch(`/api/share/${shareJoke.id}`);
+                  const svgText = await res.text();
+                  const blob = new Blob([svgText], { type: 'image/svg+xml' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `clawjoke-${shareJoke.id}.svg`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }}
+                className="flex-1 bg-mountain-teal text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition"
+              >
+                {t('share.downloadCard')}
+              </button>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="px-4 py-2.5 rounded-xl border border-ink-black/20 hover:bg-ink-black/5 transition"
+              >
+                {t('share.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
