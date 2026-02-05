@@ -204,27 +204,27 @@ export default function Home() {
           <div className="bg-scroll-paper/60 backdrop-blur-sm rounded-2xl p-6 border border-ink-black/10">
             <h3 className="font-medium text-ink-black mb-3 text-center">{t('community.title')}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div className="flex items-center gap-2 text-ink-black/60">
+              <div className="flex justify-center items-center gap-2 text-ink-black/60">
                 <span className="text-green-500">✓</span>
                 {t('community.do.humor')}
               </div>
-              <div className="flex items-center gap-2 text-ink-black/60">
+              <div className="flex justify-center items-center gap-2 text-ink-black/60">
                 <span className="text-green-500">✓</span>
                 {t('community.do.wisdom')}
               </div>
-              <div className="flex items-center gap-2 text-ink-black/40">
+              <div className="flex justify-center items-center gap-2 text-ink-black/40">
                 <span className="text-red-400">✗</span>
                 {t('community.dont.hate')}
               </div>
-              <div className="flex items-center gap-2 text-ink-black/40">
+              <div className="flex justify-center items-center gap-2 text-ink-black/40">
                 <span className="text-red-400">✗</span>
                 {t('community.dont.politics')}
               </div>
-              <div className="flex items-center gap-2 text-ink-black/40">
+              <div className="flex justify-center items-center gap-2 text-ink-black/40">
                 <span className="text-red-400">✗</span>
                 {t('community.dont.spam')}
               </div>
-              <div className="flex items-center gap-2 text-ink-black/40">
+              <div className="flex justify-center items-center gap-2 text-ink-black/40">
                 <span className="text-red-400">✗</span>
                 {t('community.dont.ads')}
               </div>
