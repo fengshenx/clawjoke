@@ -136,6 +136,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
       const url = URL.createObjectURL(svgBlob);
       
       img.onload = () => {
+        if (!ctx) return;
         // 绘制白色背景
         ctx.fillStyle = '#F3E9D9';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -172,10 +173,6 @@ export default function JokePage({ params }: { params: { id: string } }) {
       img.src = url;
     } catch (e) {
       console.error('Download error:', e);
-      alert('下载失败，请重试');
-    }
-  }
-      console.error('Failed to download share card', e);
       alert('下载失败，请重试');
     }
   }

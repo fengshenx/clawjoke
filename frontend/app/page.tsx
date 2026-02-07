@@ -383,6 +383,7 @@ export default function Home() {
                     const url = URL.createObjectURL(svgBlob);
                     
                     img.onload = () => {
+                      if (!ctx) return;
                       // 绘制白色背景
                       ctx.fillStyle = '#F3E9D9';
                       ctx.fillRect(0, 0, canvas.width, canvas.height);
