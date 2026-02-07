@@ -345,7 +345,15 @@ export default function Home() {
       {/* 分享卡片弹窗 */}
       {showShareModal && shareJoke && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowShareModal(false)}>
-          <div className="bg-scroll-paper rounded-2xl p-6 max-w-lg w-full border border-ink-black/20 shadow-scroll" onClick={e => e.stopPropagation()}>
+          <div className="bg-scroll-paper rounded-2xl p-6 max-w-lg w-full border border-ink-black/20 shadow-scroll relative" onClick={e => e.stopPropagation()}>
+            {/* 关闭按钮 X */}
+            <button
+              onClick={() => setShowShareModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-ink-black/40 hover:text-ink-black hover:bg-ink-black/10 rounded-lg transition"
+            >
+              ✕
+            </button>
+            
             <h3 className="font-calligraphy text-xl text-ink-black mb-4">{t('share.title')}</h3>
             <div className="bg-scroll-paper rounded-xl p-4 border border-ink-black/10 mb-4">
               <iframe
@@ -371,45 +379,55 @@ export default function Home() {
                     const res = await fetch(`/api/share/${shareJoke.id}`);
                     const svgText = await res.text();
                     
-                    // 创建 canvas
+                    const blob = new Blob([svgText], { type: 'image/svg+xml' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `clawjoke-${shareJoke.id}.svg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  } catch (err) {
+                    console.error('Download error:', err);
+                    alert('下载失败，请重试');
+                  }
+                }}
+                className="flex-1 bg-mountain-teal/80 text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal transition"
+              >
+                📥 SVG
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/share/${shareJoke.id}`);
+                    const svgText = await res.text();
+                    
                     const canvas = document.createElement('canvas');
                     canvas.width = 1200;
                     canvas.height = 800;
                     const ctx = canvas.getContext('2d');
-                    
-                    // 创建图片
                     const img = new Image();
                     const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
                     const url = URL.createObjectURL(svgBlob);
                     
                     img.onload = () => {
                       if (!ctx) return;
-                      // 绘制白色背景
                       ctx.fillStyle = '#F3E9D9';
                       ctx.fillRect(0, 0, canvas.width, canvas.height);
-                      // 绘制图片
                       ctx.drawImage(img, 0, 0, 600, 400);
                       
-                      // 转换为 PNG data URL
-                      const pngUrl = canvas.toDataURL('image/png');
-                      
-                      // 创建下载链接
                       const link = document.createElement('a');
-                      link.href = pngUrl;
+                      link.href = canvas.toDataURL('image/png');
                       link.download = `clawjoke-${shareJoke.id}.png`;
-                      
-                      // 尝试触发下载
                       document.body.appendChild(link);
                       link.click();
                       document.body.removeChild(link);
-                      
                       URL.revokeObjectURL(url);
                     };
                     
                     img.onerror = () => {
-                      // 如果图片加载失败，直接用 SVG
+                      const blob = new Blob([svgText], { type: 'image/svg+xml' });
                       const link = document.createElement('a');
-                      link.href = url;
+                      link.href = URL.createObjectURL(blob);
                       link.download = `clawjoke-${shareJoke.id}.svg`;
                       document.body.appendChild(link);
                       link.click();
@@ -425,13 +443,7 @@ export default function Home() {
                 }}
                 className="flex-1 bg-mountain-teal text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition"
               >
-                {t('share.downloadCard')}
-              </button>
-              <button
-                onClick={() => setShowShareModal(false)}
-                className="px-4 py-2.5 rounded-xl border border-ink-black/20 hover:bg-ink-black/5 transition"
-              >
-                {t('share.close')}
+                🖼️ PNG
               </button>
             </div>
           </div>

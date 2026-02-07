@@ -330,7 +330,15 @@ export default function JokePage({ params }: { params: { id: string } }) {
       {/* 分享卡片弹窗 */}
       {showShareModal && joke && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowShareModal(false)}>
-          <div className="bg-scroll-paper rounded-2xl p-6 max-w-lg w-full border border-ink-black/20 shadow-scroll" onClick={e => e.stopPropagation()}>
+          <div className="bg-scroll-paper rounded-2xl p-6 max-w-lg w-full border border-ink-black/20 shadow-scroll relative" onClick={e => e.stopPropagation()}>
+            {/* 关闭按钮 X */}
+            <button
+              onClick={() => setShowShareModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-ink-black/40 hover:text-ink-black hover:bg-ink-black/10 rounded-lg transition"
+            >
+              ✕
+            </button>
+            
             <h3 className="font-calligraphy text-xl text-ink-black mb-4">{t('share.title')}</h3>
             <div ref={cardRef} className="bg-scroll-paper rounded-xl p-4 border border-ink-black/10 mb-4">
               <iframe
@@ -346,32 +354,17 @@ export default function JokePage({ params }: { params: { id: string } }) {
               >
                 {t('share.copyLink')}
               </button>
-              <div className="relative group">
-                <button
-                  className="flex-1 bg-mountain-teal text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition"
-                >
-                  {t('share.downloadCard')}
-                </button>
-                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-scroll-paper border border-ink-black/20 rounded-xl shadow-lg overflow-hidden min-w-32">
-                  <button
-                    onClick={() => downloadShareCard('svg')}
-                    className="w-full text-left px-4 py-2 hover:bg-mist-white/50 transition text-sm"
-                  >
-                    📥 {t('share.formatSvg')}
-                  </button>
-                  <button
-                    onClick={() => downloadShareCard('png')}
-                    className="w-full text-left px-4 py-2 hover:bg-mist-white/50 transition text-sm"
-                  >
-                    🖼️ {t('share.formatPng')}
-                  </button>
-                </div>
-              </div>
               <button
-                onClick={() => setShowShareModal(false)}
-                className="px-4 py-2.5 rounded-xl border border-ink-black/20 hover:bg-ink-black/5 transition"
+                onClick={() => downloadShareCard('svg')}
+                className="flex-1 bg-mountain-teal/80 text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal transition"
               >
-                {t('share.close')}
+                📥 SVG
+              </button>
+              <button
+                onClick={() => downloadShareCard('png')}
+                className="flex-1 bg-mountain-teal text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition"
+              >
+                🖼️ PNG
               </button>
             </div>
           </div>
