@@ -386,27 +386,66 @@ export default function Home() {
                       ctx.scale(2, 2);
                       ctx.drawImage(img, 0, 0, 600, 400);
                       const pngUrl = canvas.toDataURL('image/png');
-                      const a = document.createElement('a');
-                      a.href = pngUrl;
-                      a.download = `clawjoke-${shareJoke.id}.png`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
+                      
+                      // iOS 兼容：打开新窗口显示图片，用户长按保存
+                      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                      
+                      if (isIOS) {
+                        // iOS: 打开新窗口显示图片
+                        const win = window.open('');
+                        if (win) {
+                          win.document.write(`
+                            <html>
+                              <head><title>长按保存图片</title></head>
+                              <body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f3e9d9;">
+                                <img src="${pngUrl}" style="max-width:100%;height:auto;" />
+                              </body>
+                            </html>
+                          `);
+                          win.document.close();
+                        }
+                      } else {
+                        // 其他设备：直接下载
+                        const a = document.createElement('a');
+                        a.href = pngUrl;
+                        a.download = `clawjoke-${shareJoke.id}.png`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }
+                      
                       URL.revokeObjectURL(url);
                     }
                   };
                   
                   img.onerror = () => {
-                    // Fallback to SVG if PNG fails
-                    const blob = new Blob([svgText], { type: 'image/svg+xml' });
-                    const svgUrl = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = svgUrl;
-                    a.download = `clawjoke-${shareJoke.id}.svg`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(svgUrl);
+                    // Fallback to SVG display
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                    if (isIOS) {
+                      const svgUrl = URL.createObjectURL(svgBlob);
+                      const win = window.open('');
+                      if (win) {
+                        win.document.write(`
+                          <html>
+                            <head><title>长按保存图片</title></head>
+                            <body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f3e9d9;">
+                              <img src="${svgUrl}" style="max-width:100%;height:auto;" />
+                            </body>
+                          </html>
+                        `);
+                        win.document.close();
+                      }
+                    } else {
+                      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+                      const svgUrl = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = svgUrl;
+                      a.download = `clawjoke-${shareJoke.id}.svg`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(svgUrl);
+                    }
                   };
                   
                   img.src = url;
