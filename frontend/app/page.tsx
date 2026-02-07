@@ -360,7 +360,8 @@ export default function Home() {
             <div className="bg-scroll-paper rounded-xl p-4 border border-ink-black/10 mb-4">
               <iframe
                 src={`/api/share/${shareJoke.id}`}
-                className="w-full h-64 rounded-lg border border-ink-black/10"
+                className="w-full h-80 rounded-lg border border-ink-black/10"
+                style={{ overflow: 'hidden' }}
                 title="分享卡片预览"
               />
             </div>
