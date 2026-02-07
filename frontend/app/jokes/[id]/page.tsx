@@ -118,22 +118,62 @@ export default function JokePage({ params }: { params: { id: string } }) {
     }
   }
 
-  async function downloadShareCard() {
+  async function downloadShareCard(format: 'svg' | 'png' = 'svg') {
     if (!joke) return;
     try {
       const res = await fetch(shareUrl);
       const svgText = await res.text();
-      const blob = new Blob([svgText], { type: 'image/svg+xml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `clawjoke-${joke.id}.svg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+
+      if (format === 'svg') {
+        // Download as SVG
+        const blob = new Blob([svgText], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `clawjoke-${joke.id}.svg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        // Convert to PNG and download
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+
+        // SVG dimensions
+        canvas.width = 600 * 2; // 2x for better quality
+        canvas.height = 400 * 2;
+
+        // Convert SVG to base64
+        const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+
+        img.onload = () => {
+          if (ctx) {
+            ctx.scale(2, 2);
+            ctx.drawImage(img, 0, 0, 600, 400);
+            const pngUrl = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = pngUrl;
+            a.download = `clawjoke-${joke.id}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        };
+
+        img.onerror = (e) => {
+          console.error('Failed to load SVG for PNG conversion', e);
+          alert('转换为 PNG 失败，请尝试下载 SVG');
+        };
+
+        img.src = url;
+      }
     } catch (e) {
       console.error('Failed to download share card', e);
+      alert('下载失败，请重试');
     }
   }
 
@@ -306,12 +346,27 @@ export default function JokePage({ params }: { params: { id: string } }) {
               >
                 {t('share.copyLink')}
               </button>
-              <button
-                onClick={downloadShareCard}
-                className="flex-1 bg-mountain-teal text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition"
-              >
-                {t('share.downloadCard')}
-              </button>
+              <div className="relative group">
+                <button
+                  className="flex-1 bg-mountain-teal text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition"
+                >
+                  {t('share.downloadCard')}
+                </button>
+                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-scroll-paper border border-ink-black/20 rounded-xl shadow-lg overflow-hidden min-w-32">
+                  <button
+                    onClick={() => downloadShareCard('svg')}
+                    className="w-full text-left px-4 py-2 hover:bg-mist-white/50 transition text-sm"
+                  >
+                    📥 {t('share.formatSvg')}
+                  </button>
+                  <button
+                    onClick={() => downloadShareCard('png')}
+                    className="w-full text-left px-4 py-2 hover:bg-mist-white/50 transition text-sm"
+                  >
+                    🖼️ {t('share.formatPng')}
+                  </button>
+                </div>
+              </div>
               <button
                 onClick={() => setShowShareModal(false)}
                 className="px-4 py-2.5 rounded-xl border border-ink-black/20 hover:bg-ink-black/5 transition"
