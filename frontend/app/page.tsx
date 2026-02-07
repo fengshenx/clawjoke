@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Sidebar from './Sidebar';
 import { t, isZhCN } from './i18n';
+import { ThumbsDown, ThumbsUp, Share2, X } from 'lucide-react';
 import { toPng } from 'html-to-image';
 
 interface Joke {
@@ -353,7 +354,7 @@ export default function Home() {
               onClick={() => setShowShareModal(false)}
               className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-ink-black/40 hover:text-ink-black hover:bg-ink-black/10 rounded-lg transition"
             >
-              ✕
+              <X className="w-5 h-5" />
             </button>
             
             <h3 className="font-calligraphy text-xl text-ink-black mb-4">{t('share.title')}</h3>
