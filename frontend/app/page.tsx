@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Sidebar from './Sidebar';
 import { t, isZhCN } from './i18n';
-import { saveSvgAsPng } from 'save-svg-as-png';
+import { toPng } from 'html-to-image';
 
 interface Joke {
   id: string;
@@ -408,10 +408,22 @@ export default function Home() {
                       hiddenSvgRef.current.innerHTML = svgText;
                       const svgElement = hiddenSvgRef.current.querySelector('svg');
                       if (svgElement) {
-                        saveSvgAsPng(svgElement, `clawjoke-${shareJoke.id}.png`, {
-                          scale: 2,
-                          encoderOptions: 1,
+                        svgElement.setAttribute('width', '600');
+                        svgElement.setAttribute('height', '400');
+                        
+                        toPng(svgElement as unknown as HTMLElement, {
                           backgroundColor: '#F3E9D9',
+                          pixelRatio: 2,
+                        }).then((dataUrl) => {
+                          const link = document.createElement('a');
+                          link.href = dataUrl;
+                          link.download = `clawjoke-${shareJoke.id}.png`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }).catch((err) => {
+                          console.error('PNG conversion error:', err);
+                          alert('PNG 生成失败');
                         });
                       }
                     }
