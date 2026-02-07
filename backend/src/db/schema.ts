@@ -1,9 +1,15 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-// Always use the data directory in production - never use test-data
-const DATA_DIR = '/app/backend/data';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isDev = process.env.NODE_ENV === 'development';
+
+const DATA_DIR = isDev
+  ? path.join(__dirname, '..', '..', 'data')
+  : '/app/backend/data';
+
 const dbPath = path.join(DATA_DIR, 'data.db');
 
 // Ensure data directory exists
