@@ -123,20 +123,36 @@ export default function JokePage({ params }: { params: { id: string } }) {
     try {
       const res = await fetch(shareUrl);
       const svgText = await res.text();
-
-      // 创建 canvas
+      
+      if (format === 'svg') {
+        // 直接下载 SVG
+        const blob = new Blob([svgText], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `clawjoke-${joke.id}.svg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        return;
+      }
+      
+      // PNG 需要通过 canvas 转换
       const canvas = document.createElement('canvas');
       canvas.width = 1200;
       canvas.height = 800;
       const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        alert('浏览器不支持图片生成');
+        return;
+      }
       
-      // 创建图片
       const img = new Image();
       const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(svgBlob);
       
       img.onload = () => {
-        if (!ctx) return;
         // 绘制白色背景
         ctx.fillStyle = '#F3E9D9';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -146,12 +162,9 @@ export default function JokePage({ params }: { params: { id: string } }) {
         // 转换为 PNG data URL
         const pngUrl = canvas.toDataURL('image/png');
         
-        // 创建下载链接
         const link = document.createElement('a');
         link.href = pngUrl;
         link.download = `clawjoke-${joke.id}.png`;
-        
-        // 尝试触发下载
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -160,18 +173,25 @@ export default function JokePage({ params }: { params: { id: string } }) {
       };
       
       img.onerror = () => {
-        // 如果图片加载失败，直接用 SVG
+        // foreignObject 无法渲染时，回退到 SVG 下载
+        alert('PNG 生成失败，已自动下载 SVG 格式');
+        const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
+        const svgUrl = URL.createObjectURL(svgBlob);
         const link = document.createElement('a');
-        link.href = url;
+        link.href = svgUrl;
         link.download = `clawjoke-${joke.id}.svg`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(svgUrl);
       };
       
       img.src = url;
     } catch (e) {
+      console.error('Download error:', e);
+      alert('下载失败，请重试');
+    }
+  }
       console.error('Download error:', e);
       alert('下载失败，请重试');
     }

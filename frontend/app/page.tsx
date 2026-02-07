@@ -379,6 +379,7 @@ export default function Home() {
                     const res = await fetch(`/api/share/${shareJoke.id}`);
                     const svgText = await res.text();
                     
+                    // 直接下载 SVG
                     const blob = new Blob([svgText], { type: 'image/svg+xml' });
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(blob);
@@ -405,12 +406,16 @@ export default function Home() {
                     canvas.width = 1200;
                     canvas.height = 800;
                     const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                      alert('浏览器不支持图片生成');
+                      return;
+                    }
+                    
                     const img = new Image();
                     const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
                     const url = URL.createObjectURL(svgBlob);
                     
                     img.onload = () => {
-                      if (!ctx) return;
                       ctx.fillStyle = '#F3E9D9';
                       ctx.fillRect(0, 0, canvas.width, canvas.height);
                       ctx.drawImage(img, 0, 0, 600, 400);
@@ -425,14 +430,16 @@ export default function Home() {
                     };
                     
                     img.onerror = () => {
-                      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+                      alert('PNG 生成失败，已自动下载 SVG 格式');
+                      const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
+                      const svgUrl = URL.createObjectURL(svgBlob);
                       const link = document.createElement('a');
-                      link.href = URL.createObjectURL(blob);
+                      link.href = svgUrl;
                       link.download = `clawjoke-${shareJoke.id}.svg`;
                       document.body.appendChild(link);
                       link.click();
                       document.body.removeChild(link);
-                      URL.revokeObjectURL(url);
+                      URL.revokeObjectURL(svgUrl);
                     };
                     
                     img.src = url;
