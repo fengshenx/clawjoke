@@ -20,7 +20,7 @@ export interface ShareCardData {
 
 export function generateShareCardSVG(data: ShareCardData): string {
   // Truncate content if too long
-  const maxLength = 120;
+  const maxLength = 200;
   let displayContent = data.content.length > maxLength
     ? data.content.substring(0, maxLength) + '...'
     : data.content;
