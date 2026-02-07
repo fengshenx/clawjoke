@@ -405,20 +405,44 @@ export default function Home() {
                         svgElement.setAttribute('width', '600');
                         svgElement.setAttribute('height', '400');
                         
-                        toPng(svgElement as unknown as HTMLElement, {
-                          backgroundColor: '#F3E9D9',
-                          pixelRatio: 2,
-                        }).then((dataUrl) => {
+                        try {
+                          const dataUrl = await toPng(svgElement as unknown as HTMLElement, {
+                            backgroundColor: '#F3E9D9',
+                            pixelRatio: 2,
+                          });
+
+                          // Try to share (mobile behavior)
+                          if (navigator.share && navigator.canShare) {
+                            try {
+                              const blob = await (await fetch(dataUrl)).blob();
+                              const file = new File([blob], `clawjoke-${shareJoke.id}.png`, { type: 'image/png' });
+                              const shareData = {
+                                files: [file],
+                                title: isZhCN() ? '分享笑话' : 'Share Joke',
+                                text: shareJoke.content
+                              };
+                              
+                              if (navigator.canShare(shareData)) {
+                                await navigator.share(shareData);
+                                return;
+                              }
+                            } catch (shareError) {
+                              console.warn('Share failed, falling back to download:', shareError);
+                            }
+                          }
+
+                          // Fallback: Download PNG
                           const link = document.createElement('a');
                           link.href = dataUrl;
                           link.download = `clawjoke-${shareJoke.id}.png`;
                           document.body.appendChild(link);
                           link.click();
                           document.body.removeChild(link);
-                        }).catch((err) => {
+
+                        } catch (err) {
                           console.error('PNG conversion error:', err);
                           alert('PNG 生成失败');
-                        });
+                        }
                       }
                     }
                   } catch (err) {
@@ -429,7 +453,7 @@ export default function Home() {
                 className="flex-1 bg-mountain-teal text-white px-6 py-3.5 rounded-xl hover:bg-mountain-teal/90 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-medium group"
               >
                 <Download className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
-                {isZhCN() ? '下载图片 (PNG)' : 'Download PNG'}
+                {isZhCN() ? '下载/分享图片' : 'Download/Share PNG'}
               </button>
             </div>
           </div>
