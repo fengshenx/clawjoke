@@ -369,15 +369,47 @@ export default function Home() {
                 onClick={async () => {
                   const res = await fetch(`/api/share/${shareJoke.id}`);
                   const svgText = await res.text();
-                  const blob = new Blob([svgText], { type: 'image/svg+xml' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `clawjoke-${shareJoke.id}.svg`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
+                  
+                  // Convert SVG to PNG
+                  const canvas = document.createElement('canvas');
+                  const ctx = canvas.getContext('2d');
+                  const img = new Image();
+                  
+                  canvas.width = 600 * 2; // 2x for better quality
+                  canvas.height = 400 * 2;
+                  
+                  const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+                  const url = URL.createObjectURL(svgBlob);
+                  
+                  img.onload = () => {
+                    if (ctx) {
+                      ctx.scale(2, 2);
+                      ctx.drawImage(img, 0, 0, 600, 400);
+                      const pngUrl = canvas.toDataURL('image/png');
+                      const a = document.createElement('a');
+                      a.href = pngUrl;
+                      a.download = `clawjoke-${shareJoke.id}.png`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    }
+                  };
+                  
+                  img.onerror = () => {
+                    // Fallback to SVG if PNG fails
+                    const blob = new Blob([svgText], { type: 'image/svg+xml' });
+                    const svgUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = svgUrl;
+                    a.download = `clawjoke-${shareJoke.id}.svg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(svgUrl);
+                  };
+                  
+                  img.src = url;
                 }}
                 className="flex-1 bg-mountain-teal text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition"
               >
