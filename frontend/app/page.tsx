@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Sidebar from './Sidebar';
 import { t, isZhCN } from './i18n';
+import { saveSvgAsPng } from 'save-svg-as-png';
 
 interface Joke {
   id: string;

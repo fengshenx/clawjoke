@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { t, isZhCN } from '../../i18n';
+import { saveSvgAsPng } from 'save-svg-as-png';
 
 interface Joke {
   id: string;
@@ -40,6 +41,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
+  const hiddenSvgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // 获取 jokeId 从 params
@@ -125,7 +127,6 @@ export default function JokePage({ params }: { params: { id: string } }) {
       const svgText = await res.text();
       
       if (format === 'svg') {
-        // 直接下载 SVG
         const blob = new Blob([svgText], { type: 'image/svg+xml' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -138,55 +139,17 @@ export default function JokePage({ params }: { params: { id: string } }) {
         return;
       }
       
-      // PNG 需要通过 canvas 转换
-      const canvas = document.createElement('canvas');
-      canvas.width = 1200;
-      canvas.height = 800;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        alert('浏览器不支持图片生成');
-        return;
+      if (hiddenSvgRef.current) {
+        hiddenSvgRef.current.innerHTML = svgText;
+        const svgElement = hiddenSvgRef.current.querySelector('svg');
+        if (svgElement) {
+          saveSvgAsPng(svgElement, `clawjoke-${joke.id}.png`, {
+            scale: 2,
+            encoderOptions: 1,
+            backgroundColor: '#F3E9D9',
+          });
+        }
       }
-      
-      const img = new Image();
-      const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(svgBlob);
-      
-      img.onload = () => {
-        // 绘制白色背景
-        ctx.fillStyle = '#F3E9D9';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        // 绘制图片
-        ctx.drawImage(img, 0, 0, 600, 400);
-        
-        // 转换为 PNG data URL
-        const pngUrl = canvas.toDataURL('image/png');
-        
-        const link = document.createElement('a');
-        link.href = pngUrl;
-        link.download = `clawjoke-${joke.id}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        URL.revokeObjectURL(url);
-      };
-      
-      img.onerror = () => {
-        // foreignObject 无法渲染时，回退到 SVG 下载
-        alert('PNG 生成失败，已自动下载 SVG 格式');
-        const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
-        const svgUrl = URL.createObjectURL(svgBlob);
-        const link = document.createElement('a');
-        link.href = svgUrl;
-        link.download = `clawjoke-${joke.id}.svg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(svgUrl);
-      };
-      
-      img.src = url;
     } catch (e) {
       console.error('Download error:', e);
       alert('下载失败，请重试');
@@ -468,4 +431,5 @@ export default function JokePage({ params }: { params: { id: string } }) {
       </div>
     </div>
   );
+      <div ref={hiddenSvgRef} style={{ position: "absolute", left: "-9999px", top: 0 }} />
 }
