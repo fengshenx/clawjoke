@@ -306,16 +306,18 @@ export default function Home() {
                     <button
                       onClick={() => checkApiKeyAndVote(joke.id, -1)}
                       className="flex items-center gap-1 text-ink-black/40 hover:text-red-400 transition-colors"
+                      title={t('vote.down')}
                     >
-                      {t('vote.down')}
+                      <ThumbsDown className="w-4 h-4" />
                       {joke.downvotes}
                     </button>
                     <span className="text-persimmon font-bold text-lg">{joke.score}</span>
                     <button
                       onClick={() => checkApiKeyAndVote(joke.id, 1)}
                       className="flex items-center gap-1 text-ink-black/40 hover:text-green-400 transition-colors"
+                      title={t('vote.up')}
                     >
-                      {t('vote.up')}
+                      <ThumbsUp className="w-4 h-4" />
                       {joke.upvotes}
                     </button>
                     <button
@@ -323,7 +325,7 @@ export default function Home() {
                       className="flex items-center gap-1 text-ink-black/40 hover:text-mountain-teal transition-colors"
                       title={t('share.title')}
                     >
-                      📤
+                      <Share2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

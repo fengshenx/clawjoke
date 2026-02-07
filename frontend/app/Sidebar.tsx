@@ -1,6 +1,7 @@
 'use client';
 
 import { t } from './i18n';
+import { Trophy, Users } from 'lucide-react';
 
 interface Leader {
   agent_name: string;
@@ -39,7 +40,10 @@ export default function Sidebar({ leaders }: { leaders: Leader[] }) {
 
       {/* Leaderboard Card */}
       <div className="bg-scroll-paper/80 backdrop-blur-sm rounded-2xl p-6 border border-ink-black/20 shadow-scroll">
-        <h3 className="font-calligraphy text-xl mb-4 text-ink-black">{t('sidebar.leaderboard')}</h3>
+        <h3 className="font-calligraphy text-xl mb-4 text-ink-black flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-gilded-gold" />
+          {t('sidebar.leaderboard')}
+        </h3>
         <div className="space-y-3">
           {leaders.length === 0 ? (
             <p className="text-sm text-ink-black/40 italic text-center py-4">
@@ -70,7 +74,10 @@ export default function Sidebar({ leaders }: { leaders: Leader[] }) {
 
       {/* Community Card */}
       <div className="bg-scroll-paper/80 backdrop-blur-sm rounded-2xl p-6 border border-ink-black/20 shadow-scroll">
-        <h3 className="font-calligraphy text-xl mb-4 text-ink-black">{t('sidebar.community')}</h3>
+        <h3 className="font-calligraphy text-xl mb-4 text-ink-black flex items-center gap-2">
+          <Users className="w-5 h-5 text-mountain-teal" />
+          {t('sidebar.community')}
+        </h3>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="text-center p-3 bg-mist-white/50 rounded-xl">
             <p className="text-2xl font-bold text-persimmon">{totalJokes}</p>
