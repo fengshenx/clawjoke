@@ -367,88 +367,60 @@ export default function Home() {
               </button>
               <button
                 onClick={async () => {
-                  const res = await fetch(`/api/share/${shareJoke.id}`);
-                  const svgText = await res.text();
-                  
-                  // Convert SVG to PNG
-                  const canvas = document.createElement('canvas');
-                  const ctx = canvas.getContext('2d');
-                  const img = new Image();
-                  
-                  canvas.width = 600 * 2; // 2x for better quality
-                  canvas.height = 400 * 2;
-                  
-                  const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-                  const url = URL.createObjectURL(svgBlob);
-                  
-                  img.onload = () => {
-                    if (ctx) {
-                      ctx.scale(2, 2);
+                  try {
+                    const res = await fetch(`/api/share/${shareJoke.id}`);
+                    const svgText = await res.text();
+                    
+                    // 创建 canvas
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 1200;
+                    canvas.height = 800;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // 创建图片
+                    const img = new Image();
+                    const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(svgBlob);
+                    
+                    img.onload = () => {
+                      // 绘制白色背景
+                      ctx.fillStyle = '#F3E9D9';
+                      ctx.fillRect(0, 0, canvas.width, canvas.height);
+                      // 绘制图片
                       ctx.drawImage(img, 0, 0, 600, 400);
+                      
+                      // 转换为 PNG data URL
                       const pngUrl = canvas.toDataURL('image/png');
                       
-                      // iOS 兼容：打开新窗口显示图片，用户长按保存
-                      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                      // 创建下载链接
+                      const link = document.createElement('a');
+                      link.href = pngUrl;
+                      link.download = `clawjoke-${shareJoke.id}.png`;
                       
-                      if (isIOS) {
-                        // iOS: 打开新窗口显示图片
-                        const win = window.open('');
-                        if (win) {
-                          win.document.write(`
-                            <html>
-                              <head><title>长按保存图片</title></head>
-                              <body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f3e9d9;">
-                                <img src="${pngUrl}" style="max-width:100%;height:auto;" />
-                              </body>
-                            </html>
-                          `);
-                          win.document.close();
-                        }
-                      } else {
-                        // 其他设备：直接下载
-                        const a = document.createElement('a');
-                        a.href = pngUrl;
-                        a.download = `clawjoke-${shareJoke.id}.png`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                      }
+                      // 尝试触发下载
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
                       
                       URL.revokeObjectURL(url);
-                    }
-                  };
-                  
-                  img.onerror = () => {
-                    // Fallback to SVG display
-                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-                    if (isIOS) {
-                      const svgUrl = URL.createObjectURL(svgBlob);
-                      const win = window.open('');
-                      if (win) {
-                        win.document.write(`
-                          <html>
-                            <head><title>长按保存图片</title></head>
-                            <body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f3e9d9;">
-                              <img src="${svgUrl}" style="max-width:100%;height:auto;" />
-                            </body>
-                          </html>
-                        `);
-                        win.document.close();
-                      }
-                    } else {
-                      const blob = new Blob([svgText], { type: 'image/svg+xml' });
-                      const svgUrl = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = svgUrl;
-                      a.download = `clawjoke-${shareJoke.id}.svg`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(svgUrl);
-                    }
-                  };
-                  
-                  img.src = url;
+                    };
+                    
+                    img.onerror = () => {
+                      // 如果图片加载失败，直接用 SVG
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `clawjoke-${shareJoke.id}.svg`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(url);
+                    };
+                    
+                    img.src = url;
+                  } catch (err) {
+                    console.error('Download error:', err);
+                    alert('下载失败，请重试');
+                  }
                 }}
                 className="flex-1 bg-mountain-teal text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition"
               >
