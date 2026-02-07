@@ -347,64 +347,51 @@ export default function Home() {
 
         <Sidebar leaders={leaders} />
 
-      {/* 分享卡片弹窗 */}
+      {/* Share Modal */}
       {showShareModal && shareJoke && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowShareModal(false)}>
-          <div className="bg-scroll-paper rounded-2xl p-6 max-w-lg w-full border border-ink-black/20 shadow-scroll relative" onClick={e => e.stopPropagation()}>
-            {/* 关闭按钮 X */}
+        <div 
+          className="fixed inset-0 bg-ink-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-ink-fade"
+          onClick={() => setShowShareModal(false)}
+        >
+          <div 
+            className="bg-scroll-paper rounded-2xl p-6 md:p-8 max-w-2xl w-full border border-ink-black/10 shadow-scroll relative flex flex-col items-center gap-6" 
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Close Button */}
             <button
               onClick={() => setShowShareModal(false)}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-ink-black/40 hover:text-ink-black hover:bg-ink-black/10 rounded-lg transition"
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-ink-black/40 hover:text-persimmon hover:bg-persimmon/10 rounded-full transition-all"
             >
               <X className="w-5 h-5" />
             </button>
             
-            <h3 className="font-calligraphy text-xl text-ink-black mb-4">{t('share.title')}</h3>
-            <div className="bg-scroll-paper rounded-xl p-4 border border-ink-black/10 mb-4">
-              <iframe
+            <h3 className="font-calligraphy text-2xl text-ink-black/90 tracking-wide">
+              {t('share.title')}
+            </h3>
+
+            {/* Image Preview - Clean & Prominent */}
+            <div className="relative w-full flex justify-center bg-scroll-paperLight/50 rounded-xl p-4 border border-ink-black/5 shadow-inner">
+              <img
                 src={`/api/share/${shareJoke.id}`}
-                className="w-full h-80 rounded-lg border border-ink-black/10"
-                style={{ overflow: 'hidden' }}
-                title="分享卡片预览"
+                alt="Share Preview"
+                className="w-full h-auto max-h-[50vh] object-contain rounded-lg shadow-sm"
               />
             </div>
-            <div className="flex gap-3">
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 w-full">
               <button
                 onClick={async () => {
                   const url = `${window.location.origin}/api/share/${shareJoke.id}`;
                   await navigator.clipboard.writeText(url);
                   alert('已复制分享链接！');
                 }}
-                className="flex-1 bg-persimmon text-white px-4 py-2.5 rounded-xl hover:bg-persimmon/90 transition"
+                className="flex-1 bg-persimmon text-white px-6 py-3.5 rounded-xl hover:bg-persimmon/90 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-medium group"
               >
+                <Share2 className="w-4 h-4 transition-transform group-hover:scale-110" />
                 {t('share.copyLink')}
               </button>
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch(`/api/share/${shareJoke.id}`);
-                    const svgText = await res.text();
-                    
-                    // 直接下载 SVG
-                    const blob = new Blob([svgText], { type: 'image/svg+xml' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `clawjoke-${shareJoke.id}.svg`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  } catch (err) {
-                    console.error('Download error:', err);
-                    alert('下载失败，请重试');
-                  }
-                }}
-                className="flex-1 bg-mountain-teal/80 text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal transition"
-              >
-                <span className="inline-flex items-center gap-1">
-                  <Download className="w-4 h-4" />
-                  SVG
-                </span>
-              </button>
+              
               <button
                 onClick={async () => {
                   try {
@@ -439,12 +426,10 @@ export default function Home() {
                     alert('下载失败，请重试');
                   }
                 }}
-                className="flex-1 bg-mountain-teal text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition"
+                className="flex-1 bg-mountain-teal text-white px-6 py-3.5 rounded-xl hover:bg-mountain-teal/90 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-medium group"
               >
-                <span className="inline-flex items-center gap-1">
-                  <Download className="w-4 h-4" />
-                  PNG
-                </span>
+                <Download className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
+                {isZhCN() ? '下载图片 (PNG)' : 'Download PNG'}
               </button>
             </div>
           </div>
