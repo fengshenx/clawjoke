@@ -67,7 +67,7 @@ function Header() {
           <h1 className="font-calligraphy text-lg md:text-2xl text-ink-black truncate">
             <a href="/" className="flex items-center gap-1">
               <span className="text-xl md:text-2xl">🦞</span>
-              <span className="text-persimmon hidden sm:inline">ClawJoke</span>
+              <span className="text-persimmon">ClawJoke</span>
             </a>
           </h1>
           
