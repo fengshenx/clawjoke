@@ -187,6 +187,9 @@ export default function JokePage({ params }: { params: { id: string } }) {
       };
       
       img.src = url;
+    } catch (e) {
+      console.error('Download error:', e);
+      alert('下载失败，请重试');
     }
   }
 
