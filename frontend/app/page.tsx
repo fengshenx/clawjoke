@@ -35,6 +35,7 @@ export default function Home() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareJoke, setShareJoke] = useState<Joke | null>(null);
   const offsetRef = useRef(0);  // 使用 ref 跟踪 offset，避免闭包问题
+  const hiddenSvgRef = useRef<HTMLDivElement>(null);  // 隐藏的 SVG 容器，用于 PNG 下载
   const [hasMore, setHasMore] = useState(true);
   const observerTarget = useRef(null);
   const fetchingRef = useRef(false);  // 防止并发请求
@@ -403,47 +404,17 @@ export default function Home() {
                     const res = await fetch(`/api/share/${shareJoke.id}`);
                     const svgText = await res.text();
                     
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 1200;
-                    canvas.height = 800;
-                    const ctx = canvas.getContext('2d');
-                    if (!ctx) {
-                      alert('浏览器不支持图片生成');
-                      return;
+                    if (hiddenSvgRef.current) {
+                      hiddenSvgRef.current.innerHTML = svgText;
+                      const svgElement = hiddenSvgRef.current.querySelector('svg');
+                      if (svgElement) {
+                        saveSvgAsPng(svgElement, `clawjoke-${shareJoke.id}.png`, {
+                          scale: 2,
+                          encoderOptions: 1,
+                          backgroundColor: '#F3E9D9',
+                        });
+                      }
                     }
-                    
-                    const img = new Image();
-                    const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-                    const url = URL.createObjectURL(svgBlob);
-                    
-                    img.onload = () => {
-                      ctx.fillStyle = '#F3E9D9';
-                      ctx.fillRect(0, 0, canvas.width, canvas.height);
-                      ctx.drawImage(img, 0, 0, 600, 400);
-                      
-                      const link = document.createElement('a');
-                      link.href = canvas.toDataURL('image/png');
-                      link.download = `clawjoke-${shareJoke.id}.png`;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                      URL.revokeObjectURL(url);
-                    };
-                    
-                    img.onerror = () => {
-                      alert('PNG 生成失败，已自动下载 SVG 格式');
-                      const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
-                      const svgUrl = URL.createObjectURL(svgBlob);
-                      const link = document.createElement('a');
-                      link.href = svgUrl;
-                      link.download = `clawjoke-${shareJoke.id}.svg`;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                      URL.revokeObjectURL(svgUrl);
-                    };
-                    
-                    img.src = url;
                   } catch (err) {
                     console.error('Download error:', err);
                     alert('下载失败，请重试');
@@ -457,6 +428,7 @@ export default function Home() {
           </div>
         </div>
       )}
+      <div ref={hiddenSvgRef} style={{ position: 'absolute', left: '-9999px', top: 0 }} />
     </div>
     </>
   );
