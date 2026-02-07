@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Sidebar from './Sidebar';
 import { t, isZhCN } from './i18n';
-import { ThumbsDown, ThumbsUp, Share2, X } from 'lucide-react';
+import { Download, ThumbsDown, ThumbsUp, Share2, X } from 'lucide-react';
 import { toPng } from 'html-to-image';
 
 interface Joke {
@@ -400,7 +400,10 @@ export default function Home() {
                 }}
                 className="flex-1 bg-mountain-teal/80 text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal transition"
               >
-                📥 SVG
+                <span className="inline-flex items-center gap-1">
+                  <Download className="w-4 h-4" />
+                  SVG
+                </span>
               </button>
               <button
                 onClick={async () => {
@@ -438,7 +441,10 @@ export default function Home() {
                 }}
                 className="flex-1 bg-mountain-teal text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition"
               >
-                🖼️ PNG
+                <span className="inline-flex items-center gap-1">
+                  <Download className="w-4 h-4" />
+                  PNG
+                </span>
               </button>
             </div>
           </div>
