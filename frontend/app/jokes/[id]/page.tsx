@@ -40,7 +40,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
   const [currentUser, setCurrentUser] = useState<{ uid: string; nickname: string } | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
-  const cardRef = useRef<HTMLDivElement>(null);
+  const [shareSvg, setShareSvg] = useState('');
   const hiddenSvgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -111,6 +111,16 @@ export default function JokePage({ params }: { params: { id: string } }) {
     }
   }, [joke]);
 
+  // Fetch SVG when modal opens
+  useEffect(() => {
+    if (showShareModal && shareUrl) {
+      fetch(shareUrl)
+        .then(res => res.text())
+        .then(svg => setShareSvg(svg))
+        .catch(console.error);
+    }
+  }, [showShareModal, shareUrl]);
+
   async function copyShareUrl() {
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -123,8 +133,8 @@ export default function JokePage({ params }: { params: { id: string } }) {
   async function downloadShareCard(format: 'svg' | 'png' = 'png') {
     if (!joke) return;
     try {
-      const res = await fetch(shareUrl);
-      const svgText = await res.text();
+      // Use cached SVG if available
+      const svgText = shareSvg || await fetch(shareUrl).then(res => res.text());
       
       if (format === 'svg') {
         const blob = new Blob([svgText], { type: 'image/svg+xml' });
@@ -139,13 +149,13 @@ export default function JokePage({ params }: { params: { id: string } }) {
         return;
       }
       
+      // PNG conversion - 竖屏适配小红书
       if (hiddenSvgRef.current) {
         hiddenSvgRef.current.innerHTML = svgText;
         const svgElement = hiddenSvgRef.current.querySelector('svg');
         if (svgElement) {
-          // 设置 SVG 属性以确保正确渲染
-          svgElement.setAttribute('width', '600');
-          svgElement.setAttribute('height', '400');
+          svgElement.setAttribute('width', '400');
+          svgElement.setAttribute('height', '600');
           
           const dataUrl = await toPng(svgElement as unknown as HTMLElement, {
             backgroundColor: '#F3E9D9',
@@ -316,7 +326,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* 分享卡片弹窗 */}
+      {/* 分享卡片弹窗 - 适配小红书竖屏 */}
       {showShareModal && joke && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowShareModal(false)}>
           <div className="bg-scroll-paper rounded-2xl p-6 max-w-lg w-full border border-ink-black/20 shadow-scroll relative" onClick={e => e.stopPropagation()}>
@@ -329,13 +339,21 @@ export default function JokePage({ params }: { params: { id: string } }) {
             </button>
             
             <h3 className="font-calligraphy text-xl text-ink-black mb-4">{t('share.title')}</h3>
-            <div ref={cardRef} className="bg-scroll-paper rounded-xl p-4 border border-ink-black/10 mb-4">
-              <iframe
-                src={`/api/share/${joke.id}`}
-                className="w-full h-64 rounded-lg border border-ink-black/10"
-                title="分享卡片预览"
-              />
+            
+            {/* 直接渲染 SVG - 适配小红书竖屏 */}
+            <div className="flex justify-center mb-4">
+              {shareSvg ? (
+                <div 
+                  className="w-[280px] h-[420px] overflow-hidden rounded-lg"
+                  dangerouslySetInnerHTML={{ __html: shareSvg }}
+                />
+              ) : (
+                <div className="w-[280px] h-[420px] flex items-center justify-center bg-scroll-paper rounded-lg text-ink-black/40">
+                  Loading...
+                </div>
+              )}
             </div>
+            
             <div className="flex gap-3">
               <button
                 onClick={copyShareUrl}
