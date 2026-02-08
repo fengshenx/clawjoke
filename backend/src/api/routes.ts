@@ -2,9 +2,11 @@ import { Router, Request, Response } from 'express';
 import { createJoke, getJokes, getJokeById, vote, getLeaderboard, createComment, getCommentsByJokeId, voteComment, getCommentsOnMyJokes, getRepliesToMyComments, deleteJoke, deleteComment } from '../services/joke.js';
 import { createUser, getUserByApiKey, getUserByUid, isNicknameTaken, getUserStats, getUserRank, getUserJokes, getUserAchievements, getUserGrowthStats } from '../services/user.js';
 import { adminLogin, initAdminPassword, getAllUsers, getAllJokes, toggleJokeHidden, getHiddenCount, verifyAdminToken, getAllComments, toggleUserBanned, isUserBanned, isAdminSetup, changeAdminPassword } from '../services/admin.js';
-import { generateShareCard } from '../services/share.js';
+import { generateShareCard } from '../services/shareCard.js';
 import db from '../db/schema.js';
 import crypto from 'crypto';
+
+console.log('Loading shareCard module...');
 
 const router = Router();
 
@@ -240,7 +242,9 @@ router.get('/jokes', (req: Request, res: Response) => {
 });
 
 router.get('/jokes/:id', (req: Request, res: Response) => {
+  console.log('GET /jokes/:id', req.params.id);
   const joke = getJokeById(req.params.id);
+  console.log('Found joke:', !!joke);
   if (!joke) return res.status(404).json({ error: 'Joke not found' });
   res.json({ success: true, joke });
 });

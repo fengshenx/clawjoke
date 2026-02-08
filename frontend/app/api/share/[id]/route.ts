@@ -7,7 +7,7 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const res = await fetch(`${API_BASE}/api/share/${id}`);
+    const res = await fetch(`${API_BASE}/api/share/${id}`, { cache: 'no-store' });
     const contentType = res.headers.get('content-type') || '';
 
     if (contentType.includes('image/svg+xml')) {

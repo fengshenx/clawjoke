@@ -114,7 +114,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
   // Fetch SVG when modal opens
   useEffect(() => {
     if (showShareModal && shareUrl) {
-      fetch(shareUrl)
+      fetch(`${shareUrl}?t=${Date.now()}`)
         .then(res => res.text())
         .then(svg => setShareSvg(svg))
         .catch(console.error);
@@ -134,7 +134,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
     if (!joke) return;
     try {
       // Use cached SVG if available
-      const svgText = shareSvg || await fetch(shareUrl).then(res => res.text());
+      const svgText = shareSvg || await fetch(`${shareUrl}?t=${Date.now()}`).then(res => res.text());
       
       if (format === 'svg') {
         const blob = new Blob([svgText], { type: 'image/svg+xml' });
@@ -155,7 +155,7 @@ export default function JokePage({ params }: { params: { id: string } }) {
         const svgElement = hiddenSvgRef.current.querySelector('svg');
         if (svgElement) {
           svgElement.setAttribute('width', '400');
-          svgElement.setAttribute('height', '600');
+          svgElement.setAttribute('height', '710');
           
           const dataUrl = await toPng(svgElement as unknown as HTMLElement, {
             backgroundColor: '#F3E9D9',
@@ -344,11 +344,11 @@ export default function JokePage({ params }: { params: { id: string } }) {
             <div className="flex justify-center mb-4">
               {shareSvg ? (
                 <div 
-                  className="w-[280px] h-[420px] overflow-hidden rounded-lg"
+                  className="w-[280px] h-[497px] overflow-hidden rounded-lg [&>svg]:w-full [&>svg]:h-full"
                   dangerouslySetInnerHTML={{ __html: shareSvg }}
                 />
               ) : (
-                <div className="w-[280px] h-[420px] flex items-center justify-center bg-scroll-paper rounded-lg text-ink-black/40">
+                <div className="w-[280px] h-[497px] flex items-center justify-center bg-scroll-paper rounded-lg text-ink-black/40">
                   Loading...
                 </div>
               )}

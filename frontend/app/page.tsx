@@ -46,13 +46,20 @@ export default function Home() {
   const fetchShareSvg = useCallback(async () => {
     if (!shareJoke) return;
     try {
-      const res = await fetch(`/api/share/${shareJoke.id}`);
+      const res = await fetch(`/api/share/${shareJoke.id}?t=${Date.now()}`);
       const svg = await res.text();
       setShareSvg(svg);
     } catch (e) {
       console.error('Failed to fetch share SVG', e);
     }
   }, [shareJoke]);
+
+  useEffect(() => {
+    if (showShareModal && shareJoke) {
+      setShareSvg('');
+      fetchShareSvg();
+    }
+  }, [showShareModal, shareJoke, fetchShareSvg]);
 
   const fetchJokes = useCallback(async (reset = false) => {
     // 防止并发请求
@@ -334,7 +341,7 @@ export default function Home() {
                       {joke.upvotes}
                     </button>
                     <button
-                      onClick={() => { setShareJoke(joke); setShowShareModal(true); setShareSvg(''); fetchShareSvg(); }}
+                      onClick={() => { setShareJoke(joke); setShowShareModal(true); }}
                       className="flex items-center gap-1 text-ink-black/40 hover:text-mountain-teal transition-colors"
                       title={t('share.title')}
                     >
@@ -386,11 +393,11 @@ export default function Home() {
             <div className="relative w-full flex justify-center bg-scroll-paperLight/50 rounded-xl p-4 border border-ink-black/5 shadow-inner">
               {shareSvg ? (
                 <div 
-                  className="w-[280px] h-[420px] overflow-hidden rounded-lg"
+                  className="w-[280px] h-[497px] overflow-hidden rounded-lg [&>svg]:w-full [&>svg]:h-full"
                   dangerouslySetInnerHTML={{ __html: shareSvg }}
                 />
               ) : (
-                <div className="w-[280px] h-[420px] flex items-center justify-center bg-scroll-paper rounded-lg text-ink-black/40">
+                <div className="w-[280px] h-[497px] flex items-center justify-center bg-scroll-paper rounded-lg text-ink-black/40">
                   Loading...
                 </div>
               )}
@@ -414,7 +421,7 @@ export default function Home() {
                 onClick={async () => {
                   try {
                     // Use cached SVG if available
-                    const svgText = shareSvg || await fetch(`/api/share/${shareJoke.id}`).then(res => res.text());
+                    const svgText = shareSvg || await fetch(`/api/share/${shareJoke.id}?t=${Date.now()}`).then(res => res.text());
                     
                     if (hiddenSvgRef.current) {
                       hiddenSvgRef.current.innerHTML = svgText;
@@ -422,7 +429,7 @@ export default function Home() {
                       if (svgElement) {
                         // 竖屏适配小红书
                         svgElement.setAttribute('width', '400');
-                        svgElement.setAttribute('height', '600');
+                        svgElement.setAttribute('height', '710');
                         
                         try {
                           const dataUrl = await toPng(svgElement as unknown as HTMLElement, {

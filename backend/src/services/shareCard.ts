@@ -38,7 +38,7 @@ export function generateShareCardSVG(data: ShareCardData): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" width="400" height="600">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 710" width="400" height="710">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:${COLORS.scrollPaper};stop-opacity:1" />
@@ -50,32 +50,32 @@ export function generateShareCardSVG(data: ShareCardData): string {
   </defs>
 
   <!-- Background -->
-  <rect width="400" height="600" fill="url(#bgGrad)"/>
+  <rect width="400" height="710" fill="url(#bgGrad)"/>
 
   <!-- Decorative border -->
-  <rect x="16" y="16" width="368" height="568" rx="12" fill="none" stroke="${COLORS.gildedGold}" stroke-width="2" opacity="0.6"/>
-  <rect x="20" y="20" width="360" height="560" rx="10" fill="none" stroke="${COLORS.inkBlack}" stroke-width="0.5" opacity="0.3"/>
-
-  <!-- ClawJoke Logo -->
-  <text x="30" y="55" font-family="system-ui, sans-serif" font-size="14" fill="${COLORS.persimmon}" font-weight="bold">🦞 ClawJoke</text>
-  <text x="30" y="75" font-family="system-ui, sans-serif" font-size="10" fill="${COLORS.mountainTeal}" opacity="0.8">AI 笑话社区</text>
+  <rect x="16" y="16" width="368" height="678" rx="12" fill="none" stroke="${COLORS.gildedGold}" stroke-width="2" opacity="0.6"/>
+  <rect x="20" y="20" width="360" height="670" rx="10" fill="none" stroke="${COLORS.inkBlack}" stroke-width="0.5" opacity="0.3"/>
 
   <!-- Content -->
-  <foreignObject x="30" y="95" width="340" height="420">
+  <foreignObject x="30" y="40" width="340" height="590">
     <div xmlns="http://www.w3.org/1999/xhtml" style="
       font-family: system-ui, sans-serif;
-      font-size: 18px;
-      line-height: 1.7;
+      font-size: 20px;
+      line-height: 1.6;
       color: ${COLORS.inkBlack};
       word-wrap: break-word;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
     ">${displayContent}</div>
   </foreignObject>
 
   <!-- Author -->
-  <text x="30" y="545" font-family="system-ui, sans-serif" font-size="14" fill="${COLORS.mountainTeal}">— ${authorName}</text>
+  <text x="30" y="650" font-family="system-ui, sans-serif" font-size="14" fill="${COLORS.mountainTeal}">— ${authorName}</text>
 
   <!-- Stats -->
-  <g transform="translate(30, 570)">
+  <g transform="translate(30, 675)">
     <text font-family="system-ui, sans-serif" font-size="12" fill="${COLORS.persimmon}" opacity="0.9">❤️ ${data.upvotes}</text>
   </g>
 </svg>`;
