@@ -35,11 +35,24 @@ export default function Home() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareJoke, setShareJoke] = useState<Joke | null>(null);
+  const [shareSvg, setShareSvg] = useState('');
   const offsetRef = useRef(0);  // 使用 ref 跟踪 offset，避免闭包问题
   const hiddenSvgRef = useRef<HTMLDivElement>(null);  // 隐藏的 SVG 容器，用于 PNG 下载
   const [hasMore, setHasMore] = useState(true);
   const observerTarget = useRef(null);
   const fetchingRef = useRef(false);  // 防止并发请求
+
+  // Fetch SVG when share modal opens
+  const fetchShareSvg = useCallback(async () => {
+    if (!shareJoke) return;
+    try {
+      const res = await fetch(`/api/share/${shareJoke.id}`);
+      const svg = await res.text();
+      setShareSvg(svg);
+    } catch (e) {
+      console.error('Failed to fetch share SVG', e);
+    }
+  }, [shareJoke]);
 
   const fetchJokes = useCallback(async (reset = false) => {
     // 防止并发请求
@@ -321,7 +334,7 @@ export default function Home() {
                       {joke.upvotes}
                     </button>
                     <button
-                      onClick={() => { setShareJoke(joke); setShowShareModal(true); }}
+                      onClick={() => { setShareJoke(joke); setShowShareModal(true); setShareSvg(''); fetchShareSvg(); }}
                       className="flex items-center gap-1 text-ink-black/40 hover:text-mountain-teal transition-colors"
                       title={t('share.title')}
                     >
@@ -369,13 +382,18 @@ export default function Home() {
               {t('share.title')}
             </h3>
 
-            {/* Image Preview - Clean & Prominent */}
+            {/* SVG Preview - 适配小红书竖屏 */}
             <div className="relative w-full flex justify-center bg-scroll-paperLight/50 rounded-xl p-4 border border-ink-black/5 shadow-inner">
-              <img
-                src={`/api/share/${shareJoke.id}`}
-                alt="Share Preview"
-                className="w-full h-auto max-h-[50vh] object-contain rounded-lg shadow-sm"
-              />
+              {shareSvg ? (
+                <div 
+                  className="w-[280px] h-[420px] overflow-hidden rounded-lg"
+                  dangerouslySetInnerHTML={{ __html: shareSvg }}
+                />
+              ) : (
+                <div className="w-[280px] h-[420px] flex items-center justify-center bg-scroll-paper rounded-lg text-ink-black/40">
+                  Loading...
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -395,15 +413,16 @@ export default function Home() {
               <button
                 onClick={async () => {
                   try {
-                    const res = await fetch(`/api/share/${shareJoke.id}`);
-                    const svgText = await res.text();
+                    // Use cached SVG if available
+                    const svgText = shareSvg || await fetch(`/api/share/${shareJoke.id}`).then(res => res.text());
                     
                     if (hiddenSvgRef.current) {
                       hiddenSvgRef.current.innerHTML = svgText;
                       const svgElement = hiddenSvgRef.current.querySelector('svg');
                       if (svgElement) {
-                        svgElement.setAttribute('width', '600');
-                        svgElement.setAttribute('height', '400');
+                        // 竖屏适配小红书
+                        svgElement.setAttribute('width', '400');
+                        svgElement.setAttribute('height', '600');
                         
                         try {
                           const dataUrl = await toPng(svgElement as unknown as HTMLElement, {
