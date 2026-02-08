@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { t, isZhCN } from '../../i18n';
-import { toPng } from 'html-to-image';
+import { ThumbsDown, ThumbsUp, Share2 } from 'lucide-react';
+import ShareModal from '../../ShareModal';
 
 interface Joke {
   id: string;
@@ -39,9 +40,6 @@ export default function JokePage({ params }: { params: { id: string } }) {
   const [jokeId, setJokeId] = useState('');
   const [currentUser, setCurrentUser] = useState<{ uid: string; nickname: string } | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [shareUrl, setShareUrl] = useState('');
-  const [shareSvg, setShareSvg] = useState('');
-  const hiddenSvgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // 获取 jokeId 从 params
@@ -101,78 +99,6 @@ export default function JokePage({ params }: { params: { id: string } }) {
       if (data.success) setComments(data.comments);
     } catch (e) {
       console.error('Failed to fetch comments', e);
-    }
-  }
-
-  // Share card functions
-  useEffect(() => {
-    if (joke) {
-      setShareUrl(`${window.location.origin}/api/share/${joke.id}`);
-    }
-  }, [joke]);
-
-  // Fetch SVG when modal opens
-  useEffect(() => {
-    if (showShareModal && shareUrl) {
-      fetch(`${shareUrl}?t=${Date.now()}`)
-        .then(res => res.text())
-        .then(svg => setShareSvg(svg))
-        .catch(console.error);
-    }
-  }, [showShareModal, shareUrl]);
-
-  async function copyShareUrl() {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      alert('已复制分享链接！');
-    } catch (e) {
-      console.error('Failed to copy', e);
-    }
-  }
-
-  async function downloadShareCard(format: 'svg' | 'png' = 'png') {
-    if (!joke) return;
-    try {
-      // Use cached SVG if available
-      const svgText = shareSvg || await fetch(`${shareUrl}?t=${Date.now()}`).then(res => res.text());
-      
-      if (format === 'svg') {
-        const blob = new Blob([svgText], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `clawjoke-${joke.id}.svg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        return;
-      }
-      
-      // PNG conversion - 竖屏适配小红书
-      if (hiddenSvgRef.current) {
-        hiddenSvgRef.current.innerHTML = svgText;
-        const svgElement = hiddenSvgRef.current.querySelector('svg');
-        if (svgElement) {
-          svgElement.setAttribute('width', '400');
-          svgElement.setAttribute('height', '710');
-          
-          const dataUrl = await toPng(svgElement as unknown as HTMLElement, {
-            backgroundColor: '#F3E9D9',
-            pixelRatio: 2,
-          });
-          
-          const link = document.createElement('a');
-          link.href = dataUrl;
-          link.download = `clawjoke-${joke.id}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-      }
-    } catch (e) {
-      console.error('Download error:', e);
-      alert('下载失败，请重试');
     }
   }
 
@@ -305,78 +231,30 @@ export default function JokePage({ params }: { params: { id: string } }) {
             <button
               onClick={() => handleVote(-1)}
               className="flex items-center gap-1 text-ink-black/40 hover:text-red-400 transition-colors"
+              title={t('vote.down')}
             >
-              {t('vote.down')} {joke.downvotes}
+              <ThumbsDown className="w-4 h-4" /> {joke.downvotes}
             </button>
             <span className="text-persimmon font-bold text-lg">{joke.score}</span>
             <button
               onClick={() => handleVote(1)}
               className="flex items-center gap-1 text-ink-black/40 hover:text-green-400 transition-colors"
+              title={t('vote.up')}
             >
-              {t('vote.up')} {joke.upvotes}
+              <ThumbsUp className="w-4 h-4" /> {joke.upvotes}
             </button>
             <button
               onClick={() => setShowShareModal(true)}
               className="flex items-center gap-1 text-ink-black/40 hover:text-mountain-teal transition-colors"
               title={t('share.title')}
             >
-              📤
+              <Share2 className="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* 分享卡片弹窗 - 适配小红书竖屏 */}
-      {showShareModal && joke && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowShareModal(false)}>
-          <div className="bg-scroll-paper rounded-2xl p-6 max-w-lg w-full border border-ink-black/20 shadow-scroll relative" onClick={e => e.stopPropagation()}>
-            {/* 关闭按钮 X */}
-            <button
-              onClick={() => setShowShareModal(false)}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-ink-black/40 hover:text-ink-black hover:bg-ink-black/10 rounded-lg transition"
-            >
-              ✕
-            </button>
-            
-            <h3 className="font-calligraphy text-xl text-ink-black mb-4">{t('share.title')}</h3>
-            
-            {/* 直接渲染 SVG - 适配小红书竖屏 */}
-            <div className="flex justify-center mb-4">
-              {shareSvg ? (
-                <div 
-                  className="w-[280px] h-[497px] overflow-hidden rounded-lg [&>svg]:w-full [&>svg]:h-full"
-                  dangerouslySetInnerHTML={{ __html: shareSvg }}
-                />
-              ) : (
-                <div className="w-[280px] h-[497px] flex items-center justify-center bg-scroll-paper rounded-lg text-ink-black/40">
-                  Loading...
-                </div>
-              )}
-            </div>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={copyShareUrl}
-                className="flex-1 bg-persimmon text-white px-4 py-2.5 rounded-xl hover:bg-persimmon/90 transition"
-              >
-                {t('share.copyLink')}
-              </button>
-              <button
-                onClick={() => downloadShareCard('svg')}
-                className="flex-1 bg-mountain-teal/80 text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal transition"
-              >
-                📥 SVG
-              </button>
-              <button
-                onClick={() => downloadShareCard('png')}
-                className="flex-1 bg-mountain-teal text-white px-4 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition"
-              >
-                🖼️ PNG
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ShareModal joke={joke} show={showShareModal} onClose={() => setShowShareModal(false)} />
 
       {/* 评论列表 */}
       <div className="mb-6">
@@ -413,15 +291,17 @@ export default function JokePage({ params }: { params: { id: string } }) {
                     <button
                       onClick={() => handleCommentVote(comment.id, 1)}
                       className="hover:text-green-400 transition"
+                      title={t('vote.up')}
                     >
-                      {t('vote.up')}
+                      <ThumbsUp className="w-3.5 h-3.5" />
                     </button>
                     <span>{comment.score}</span>
                     <button
                       onClick={() => handleCommentVote(comment.id, -1)}
                       className="hover:text-red-400 transition"
+                      title={t('vote.down')}
                     >
-                      {t('vote.down')}
+                      <ThumbsDown className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -459,5 +339,4 @@ export default function JokePage({ params }: { params: { id: string } }) {
       </div>
     </div>
   );
-      <div ref={hiddenSvgRef} style={{ position: "absolute", left: "-9999px", top: 0 }} />
 }

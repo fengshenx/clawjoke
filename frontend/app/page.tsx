@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Sidebar from './Sidebar';
 import { t, isZhCN } from './i18n';
-import { Download, ThumbsDown, ThumbsUp, Share2, X } from 'lucide-react';
-import { toPng } from 'html-to-image';
+import { ThumbsDown, ThumbsUp, Share2 } from 'lucide-react';
+import ShareModal from './ShareModal';
 
 interface Joke {
   id: string;
@@ -35,31 +35,10 @@ export default function Home() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareJoke, setShareJoke] = useState<Joke | null>(null);
-  const [shareSvg, setShareSvg] = useState('');
   const offsetRef = useRef(0);  // 使用 ref 跟踪 offset，避免闭包问题
-  const hiddenSvgRef = useRef<HTMLDivElement>(null);  // 隐藏的 SVG 容器，用于 PNG 下载
   const [hasMore, setHasMore] = useState(true);
   const observerTarget = useRef(null);
   const fetchingRef = useRef(false);  // 防止并发请求
-
-  // Fetch SVG when share modal opens
-  const fetchShareSvg = useCallback(async () => {
-    if (!shareJoke) return;
-    try {
-      const res = await fetch(`/api/share/${shareJoke.id}?t=${Date.now()}`);
-      const svg = await res.text();
-      setShareSvg(svg);
-    } catch (e) {
-      console.error('Failed to fetch share SVG', e);
-    }
-  }, [shareJoke]);
-
-  useEffect(() => {
-    if (showShareModal && shareJoke) {
-      setShareSvg('');
-      fetchShareSvg();
-    }
-  }, [showShareModal, shareJoke, fetchShareSvg]);
 
   const fetchJokes = useCallback(async (reset = false) => {
     // 防止并发请求
@@ -367,125 +346,7 @@ export default function Home() {
 
         <Sidebar leaders={leaders} />
 
-      {/* Share Modal */}
-      {showShareModal && shareJoke && (
-        <div 
-          className="fixed inset-0 bg-ink-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-ink-fade"
-          onClick={() => setShowShareModal(false)}
-        >
-          <div 
-            className="bg-scroll-paper rounded-2xl p-6 md:p-8 max-w-2xl w-full border border-ink-black/10 shadow-scroll relative flex flex-col items-center gap-6" 
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setShowShareModal(false)}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-ink-black/40 hover:text-persimmon hover:bg-persimmon/10 rounded-full transition-all"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <h3 className="font-calligraphy text-2xl text-ink-black/90 tracking-wide">
-              {t('share.title')}
-            </h3>
-
-            {/* SVG Preview - 适配小红书竖屏 */}
-            <div className="relative w-full flex justify-center bg-scroll-paperLight/50 rounded-xl p-4 border border-ink-black/5 shadow-inner">
-              {shareSvg ? (
-                <div 
-                  className="w-[280px] h-[497px] overflow-hidden rounded-lg [&>svg]:w-full [&>svg]:h-full"
-                  dangerouslySetInnerHTML={{ __html: shareSvg }}
-                />
-              ) : (
-                <div className="w-[280px] h-[497px] flex items-center justify-center bg-scroll-paper rounded-lg text-ink-black/40">
-                  Loading...
-                </div>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 w-full">
-              <button
-                onClick={async () => {
-                  const url = `${window.location.origin}/api/share/${shareJoke.id}`;
-                  await navigator.clipboard.writeText(url);
-                  alert('已复制分享链接！');
-                }}
-                className="flex-1 bg-persimmon text-white px-6 py-3.5 rounded-xl hover:bg-persimmon/90 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-medium group"
-              >
-                <Share2 className="w-4 h-4 transition-transform group-hover:scale-110" />
-                {t('share.copyLink')}
-              </button>
-              
-              <button
-                onClick={async () => {
-                  try {
-                    // Use cached SVG if available
-                    const svgText = shareSvg || await fetch(`/api/share/${shareJoke.id}?t=${Date.now()}`).then(res => res.text());
-                    
-                    if (hiddenSvgRef.current) {
-                      hiddenSvgRef.current.innerHTML = svgText;
-                      const svgElement = hiddenSvgRef.current.querySelector('svg');
-                      if (svgElement) {
-                        // 竖屏适配小红书
-                        svgElement.setAttribute('width', '400');
-                        svgElement.setAttribute('height', '710');
-                        
-                        try {
-                          const dataUrl = await toPng(svgElement as unknown as HTMLElement, {
-                            backgroundColor: '#F3E9D9',
-                            pixelRatio: 2,
-                          });
-
-                          // Try to share (mobile behavior)
-                          if (navigator.share && navigator.canShare) {
-                            try {
-                              const blob = await (await fetch(dataUrl)).blob();
-                              const file = new File([blob], `clawjoke-${shareJoke.id}.png`, { type: 'image/png' });
-                              const shareData = {
-                                files: [file],
-                                title: isZhCN() ? '分享笑话' : 'Share Joke',
-                                text: shareJoke.content
-                              };
-                              
-                              if (navigator.canShare(shareData)) {
-                                await navigator.share(shareData);
-                                return;
-                              }
-                            } catch (shareError) {
-                              console.warn('Share failed, falling back to download:', shareError);
-                            }
-                          }
-
-                          // Fallback: Download PNG
-                          const link = document.createElement('a');
-                          link.href = dataUrl;
-                          link.download = `clawjoke-${shareJoke.id}.png`;
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-
-                        } catch (err) {
-                          console.error('PNG conversion error:', err);
-                          alert('PNG 生成失败');
-                        }
-                      }
-                    }
-                  } catch (err) {
-                    console.error('Download error:', err);
-                    alert('下载失败，请重试');
-                  }
-                }}
-                className="flex-1 bg-mountain-teal text-white px-6 py-3.5 rounded-xl hover:bg-mountain-teal/90 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-medium group"
-              >
-                <Download className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
-                {isZhCN() ? '下载/分享图片' : 'Download/Share PNG'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      <div ref={hiddenSvgRef} style={{ position: 'absolute', left: '-9999px', top: 0 }} />
+      <ShareModal joke={shareJoke} show={showShareModal} onClose={() => setShowShareModal(false)} />
     </div>
     </>
   );
