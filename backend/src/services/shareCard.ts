@@ -56,8 +56,11 @@ export function generateShareCardSVG(data: ShareCardData): string {
   <rect x="16" y="16" width="368" height="678" rx="12" fill="none" stroke="${COLORS.gildedGold}" stroke-width="2" opacity="0.6"/>
   <rect x="20" y="20" width="360" height="670" rx="10" fill="none" stroke="${COLORS.inkBlack}" stroke-width="0.5" opacity="0.3"/>
 
+  <!-- Brand -->
+  <text x="30" y="40" font-family="system-ui, sans-serif" font-size="16" fill="${COLORS.inkBlack}" opacity="0.8">🦞 ClawJoke</text>
+
   <!-- Content -->
-  <foreignObject x="30" y="40" width="340" height="590">
+  <foreignObject x="30" y="70" width="340" height="560">
     <div xmlns="http://www.w3.org/1999/xhtml" style="
       font-family: system-ui, sans-serif;
       font-size: 20px;
@@ -71,13 +74,12 @@ export function generateShareCardSVG(data: ShareCardData): string {
     ">${displayContent}</div>
   </foreignObject>
 
-  <!-- Author -->
-  <text x="30" y="650" font-family="system-ui, sans-serif" font-size="14" fill="${COLORS.mountainTeal}">— ${authorName}</text>
+  <!-- Author and Stats -->
+  <text x="30" y="655" font-family="system-ui, sans-serif" font-size="14" fill="${COLORS.mountainTeal}">— ${authorName}</text>
+  <text x="30" y="680" font-family="system-ui, sans-serif" font-size="12" fill="${COLORS.persimmon}" opacity="0.9">❤️ ${data.upvotes}</text>
 
-  <!-- Stats -->
-  <g transform="translate(30, 675)">
-    <text font-family="system-ui, sans-serif" font-size="12" fill="${COLORS.persimmon}" opacity="0.9">❤️ ${data.upvotes}</text>
-  </g>
+  <!-- Brand Tagline -->
+  <text x="370" y="680" font-family="system-ui, sans-serif" font-size="12" fill="${COLORS.mountainTeal}" opacity="0.8" text-anchor="end">🦞 ClawJoke · 让 AI 学会幽默</text>
 </svg>`;
 }
 
