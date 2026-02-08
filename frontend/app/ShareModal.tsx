@@ -106,11 +106,11 @@ export default function ShareModal({ joke, show, onClose }: ShareModalProps) {
   return (
     <>
       <div 
-        className="fixed inset-0 bg-ink-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-ink-fade"
+        className="fixed inset-0 bg-ink-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 md:p-4 animate-ink-fade"
         onClick={onClose}
       >
         <div 
-          className="bg-scroll-paper rounded-2xl p-6 md:p-8 max-w-2xl w-full border border-ink-black/10 shadow-scroll relative flex flex-col items-center gap-6" 
+          className="bg-scroll-paper rounded-2xl p-4 md:p-7 max-w-2xl w-full border border-ink-black/10 shadow-scroll relative flex flex-col items-center gap-4 md:gap-5" 
           onClick={e => e.stopPropagation()}
         >
           <button
@@ -120,27 +120,27 @@ export default function ShareModal({ joke, show, onClose }: ShareModalProps) {
             <X className="w-5 h-5" />
           </button>
           
-          <h3 className="font-calligraphy text-2xl text-ink-black/90 tracking-wide">
+          <h3 className="font-calligraphy text-xl md:text-2xl leading-none text-ink-black/90 tracking-wide">
             {t('share.title')}
           </h3>
 
-          <div className="relative w-full flex justify-center bg-scroll-paperLight/50 rounded-xl p-4 border border-ink-black/5 shadow-inner">
+          <div className="relative w-full flex justify-center bg-scroll-paperLight/50 rounded-xl p-3 md:p-4 border border-ink-black/5 shadow-inner">
             {shareSvg ? (
               <div 
-                className="w-[280px] h-[497px] overflow-hidden rounded-lg [&>svg]:w-full [&>svg]:h-full"
+                className="w-[min(54vw,220px)] md:w-[280px] aspect-[400/710] overflow-hidden rounded-lg [&>svg]:w-full [&>svg]:h-full"
                 dangerouslySetInnerHTML={{ __html: shareSvg }}
               />
             ) : (
-              <div className="w-[280px] h-[497px] flex items-center justify-center bg-scroll-paper rounded-lg text-ink-black/40">
+              <div className="w-[min(54vw,220px)] md:w-[280px] aspect-[400/710] flex items-center justify-center bg-scroll-paper rounded-lg text-ink-black/40">
                 Loading...
               </div>
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 w-full">
+          <div className="grid grid-cols-2 gap-3 w-full">
             <button
               onClick={copyShareUrl}
-              className="flex-1 bg-persimmon text-white px-6 py-3.5 rounded-xl hover:bg-persimmon/90 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-medium group"
+              className="bg-persimmon text-white px-3 py-2.5 rounded-xl hover:bg-persimmon/90 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-medium group text-sm md:text-base"
             >
               <Share2 className="w-4 h-4 transition-transform group-hover:scale-110" />
               {t('share.copyLink')}
@@ -148,7 +148,7 @@ export default function ShareModal({ joke, show, onClose }: ShareModalProps) {
             
             <button
               onClick={handleDownloadOrShare}
-              className="flex-1 bg-mountain-teal text-white px-6 py-3.5 rounded-xl hover:bg-mountain-teal/90 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-medium group"
+              className="bg-mountain-teal text-white px-3 py-2.5 rounded-xl hover:bg-mountain-teal/90 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-medium group text-sm md:text-base"
             >
               <Download className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
               {isZhCN() ? '下载/分享图片' : 'Download/Share PNG'}
