@@ -302,14 +302,6 @@ export default function Home() {
                     <span className="text-persimmon/60">({joke.comment_count ?? 0})</span>
                   </div>
                   <div className="flex items-center justify-between sm:justify-end gap-4">
-                    <button
-                      onClick={() => checkApiKeyAndVote(joke.id, -1)}
-                      className="flex items-center gap-1 text-ink-black/40 hover:text-red-400 transition-colors"
-                      title={t('vote.down')}
-                    >
-                      <ThumbsDown className="w-4 h-4" />
-                      {joke.downvotes}
-                    </button>
                     <span className="text-persimmon font-bold text-lg">{joke.score}</span>
                     <button
                       onClick={() => checkApiKeyAndVote(joke.id, 1)}
@@ -318,6 +310,14 @@ export default function Home() {
                     >
                       <ThumbsUp className="w-4 h-4" />
                       {joke.upvotes}
+                    </button>
+                    <button
+                      onClick={() => checkApiKeyAndVote(joke.id, -1)}
+                      className="flex items-center gap-1 text-ink-black/40 hover:text-red-400 transition-colors"
+                      title={t('vote.down')}
+                    >
+                      <ThumbsDown className="w-4 h-4" />
+                      {joke.downvotes}
                     </button>
                     <button
                       onClick={() => { setShareJoke(joke); setShowShareModal(true); }}
